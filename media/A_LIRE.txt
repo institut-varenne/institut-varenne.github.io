@@ -7,7 +7,8 @@ place une "copie degradee" generee par le navigateur.
   trepanation-1.jpg     Cliche 1/3 — Preparation du sujet       (format 4:3 conseille, < 2 Mo)
   trepanation-2.jpg     Cliche 2/3 — Trepanation                (idem)
   trepanation-3.jpg     Cliche 3/3 — Prelevement C-314          (idem)
-  extraction-314.mp4    Video camera 02 — seance d'extraction   (H.264 + AAC, 16:9, < 25 Mo, 10 a 30 s)
+  (plus de fichier video a fournir : la video "camera 02" est fabriquee par le site a partir de trepanation-2.jpg,
+   avec scintillements, extinctions d ecran, secousses et bande-son scie + cris synthetisee)
 
 PROMPTS SUGGERES (image : Midjourney, Flux, Ideogram, DALL-E ; video : Sora, Runway Gen-3, Kling, Veo, Pika)
 
