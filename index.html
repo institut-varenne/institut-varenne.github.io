@@ -240,56 +240,6 @@
   /* Secours: anomalie de restitution */
   .anomaly dl { grid-template-columns: minmax(12em, 19em) 1fr; }
 
-  /* Écran final */
-  .final {
-    position: fixed; inset: 0;
-    background: #000;
-    color: #e9eef2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding-block: 24px;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    z-index: 10;
-  }
-  .final .inner { display: grid; gap: 18px; }
-  .final .hotel {
-    font-family: var(--font-display);
-    font-size: clamp(28px, 6vw, 56px);
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    line-height: 1.1;
-    margin: 0;
-    font-weight: 400;
-  }
-  .final .welcome {
-    font-family: var(--font-display);
-    font-size: clamp(18px, 3.2vw, 30px);
-    letter-spacing: .06em;
-    margin: 0;
-    text-transform: uppercase;
-    font-weight: 400;
-    color: #c9d3da;
-  }
-  .final .date, .final .cycle {
-    font-size: clamp(14px, 2.2vw, 20px);
-    letter-spacing: .22em;
-    text-transform: uppercase;
-    margin: 0;
-    font-variant-numeric: tabular-nums;
-  }
-  .final .cycle { color: var(--ice); margin-top: 14px; }
-  .final .cycle::after {
-    content: "";
-    display: inline-block;
-    width: .55em; height: 1em;
-    background: var(--ice);
-    vertical-align: text-bottom;
-    margin-left: .4em;
-    animation: blink 1.1s steps(2, start) infinite;
-  }
   .foot {
     margin-top: 16px;
     font-size: 11px;
@@ -301,7 +251,7 @@
   .reveal { animation: reveal .5s ease-out; }
   @keyframes reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
-    .reveal, .status.busy::after, .final .cycle::after { animation: none; }
+    .reveal, .status.busy::after { animation: none; }
   }
   @media (max-width: 520px) {
     .screen, .letterhead { padding-left: 16px; padding-right: 16px; }
@@ -381,17 +331,7 @@
     </div>
   </section>
 </main>
-<p class="foot" id="foot">Grand Hôtel des Champs · Service médical · Document confidentiel</p>
-
-<!-- Écran final (accessible par #final, non relié) -->
-<div class="final" id="view-final" hidden>
-  <div class="inner">
-    <p class="hotel">Grand Hôtel des Champs</p>
-    <p class="welcome">Bienvenue à nos sept nouveaux résidents</p>
-    <p class="date">31 octobre 1987 — 20:00</p>
-    <p class="cycle">Cycle 0417 — Initialisation</p>
-  </div>
-</div>
+<p class="foot" id="foot">Institut Varenne · Section neurologique · Document confidentiel</p>
 
 <script>
 (function () {
@@ -401,11 +341,8 @@
   var views = {
     login: document.getElementById("view-login"),
     record: document.getElementById("view-record"),
-    anomaly: document.getElementById("view-anomaly"),
-    final: document.getElementById("view-final")
+    anomaly: document.getElementById("view-anomaly")
   };
-  var consoleEl = document.getElementById("console");
-  var footEl = document.getElementById("foot");
   var form = document.getElementById("login-form");
   var identEl = document.getElementById("ident");
   var codeEl = document.getElementById("code");
@@ -426,10 +363,7 @@
 
   function show(name) {
     Object.keys(views).forEach(function (k) { views[k].hidden = (k !== name); });
-    var isFinal = name === "final";
-    consoleEl.hidden = isFinal;
-    footEl.hidden = isFinal;
-    if (!isFinal && !reduced) {
+    if (!reduced) {
       views[name].classList.remove("reveal");
       void views[name].offsetWidth;
       views[name].classList.add("reveal");
@@ -438,7 +372,6 @@
 
   function route() {
     var h = (location.hash || "").replace("#", "").toLowerCase();
-    if (h === "final") { show("final"); return; }
     if (h === "anomalie" || h === "anomaly") { show("anomaly"); return; }
     if (session(true)) { show("record"); return; }
     show("login");
