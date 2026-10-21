@@ -2,8 +2,8 @@ GRAND HÔTEL DES CHAMPS — SITE « ARCHIVES MÉDICALES »
 ====================================================
 
 
-ADRESSE EN LIGNE : https://kevinmoreirad.github.io/archives-varenne/
-Depot GitHub (pour modifier) : https://github.com/kevinmoreirad/archives-varenne
+ADRESSE EN LIGNE : https://institut-varenne.github.io/
+Depot GitHub (pour modifier) : https://github.com/institut-varenne/institut-varenne.github.io
 Pour mettre a jour : remplacer index.html dans le depot, GitHub republie en une minute.
 Ce dossier contient le site complet dans un seul fichier : index.html.
 Il fonctionne aussi hors ligne : double-cliquez sur index.html pour l'ouvrir.
