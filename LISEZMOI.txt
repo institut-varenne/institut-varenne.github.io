@@ -1,0 +1,23 @@
+GRAND HÔTEL DES CHAMPS — SITE « ARCHIVES MÉDICALES »
+====================================================
+
+Ce dossier contient le site complet dans un seul fichier : index.html.
+Il fonctionne aussi hors ligne : double-cliquez sur index.html pour l'ouvrir.
+
+RÉFÉRENCES DU JEU
+  Identifiant ........ V.VARENNE
+  Code ............... RV-6419
+  (majuscules, point et tiret ne sont pas obligatoires)
+
+PAGES CACHÉES (à taper à la fin de l'adresse, jamais affichées aux joueurs)
+  #anomalie   fiche de secours « Anomalie de restitution » (acte IV)
+  #final      écran noir « Bienvenue à nos sept nouveaux résidents — Cycle 0417 »
+  « Fermer la session » revient à la page de connexion pour la partie suivante.
+
+HÉBERGEMENT GRATUIT (si vous voulez une autre adresse que celle de claude.ai)
+  Netlify Drop : https://app.netlify.com/drop
+     Glissez-déposez ce dossier entier dans la page. Adresse immédiate,
+     modifiable dans Site settings > Change site name (ex. archives-varenne.netlify.app).
+  GitHub Pages : créez un dépôt public, déposez index.html à la racine,
+     puis Settings > Pages > Branch main. Adresse : https://<compte>.github.io/<dépôt>/
+  Cloudflare Pages : https://pages.cloudflare.com (glisser-déposer également).
