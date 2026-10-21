@@ -7,20 +7,22 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-  /* Layout: a single centered terminal window, the way a locked archive console would be shown on the clinic PC.
-     Single dark theme by design: this is a screen inside the game, not a document. */
+  /* Layout: a full-screen clinical terminal. Boot overlay, then one centered console with an EEG trace in the header.
+     Single dark theme by design: this is a screen inside the game. */
   :root {
-    --bg: #070b10;
-    --bg-panel: #0c1219;
-    --bg-inset: #0a0f15;
-    --line: #1c2a36;
-    --line-strong: #2b4050;
-    --fg: #d6e2ea;
-    --fg-muted: #7f95a5;
-    --fg-dim: #4d6272;
-    --ice: #8fd3e6;
-    --ice-deep: #2d8ea8;
-    --alarm: #e0a85b;
+    --bg: #050809;
+    --bg-panel: rgba(9, 16, 22, 0.92);
+    --bg-inset: #070d12;
+    --line: #15232d;
+    --line-strong: #244052;
+    --fg: #d9e6ee;
+    --fg-muted: #7d97a8;
+    --fg-dim: #42596a;
+    --ice: #7fe3ff;
+    --ice-deep: #1f8fb0;
+    --ice-glow: rgba(127, 227, 255, 0.35);
+    --alarm: #e3a455;
+    --blood: #8b1a1a;
     --font-display: "EB Garamond", "Garamond", Georgia, "Times New Roman", serif;
     --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     color-scheme: dark;
@@ -41,232 +43,279 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-image:
-      linear-gradient(rgba(143, 211, 230, 0.025) 1px, transparent 1px);
-    background-size: 100% 3px;
+    position: relative;
+    overflow-x: hidden;
   }
+  /* Technological ground: fine grid, slow sweep, scanlines, vignette */
+  .ground {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 35%, rgba(31, 143, 176, 0.14), transparent 70%),
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: auto, 44px 44px, 44px 44px;
+    background-position: center, center, center;
+    opacity: .55;
+    overflow: hidden;
+  }
+  .ground::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(rgba(0,0,0,.18) 1px, transparent 1px);
+    background-size: 100% 3px;
+    mix-blend-mode: multiply;
+  }
+  .ground::after {
+    content: "";
+    position: absolute; left: 0; right: 0; height: 160px; top: -160px;
+    background: linear-gradient(180deg, transparent, rgba(127, 227, 255, 0.07), transparent);
+    animation: sweep 9s linear infinite;
+  }
+  @keyframes sweep { to { transform: translateY(calc(100vh + 320px)); } }
+  .vignette {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 55%, rgba(0,0,0,.75) 100%);
+  }
+
   .console {
+    position: relative; z-index: 1;
     width: 100%;
-    max-width: 720px;
+    max-width: 760px;
     border: 1px solid var(--line-strong);
     background: var(--bg-panel);
-    box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 30px 60px rgba(0,0,0,.5);
+    backdrop-filter: blur(6px);
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,.7),
+      0 0 40px rgba(31, 143, 176, 0.12),
+      0 30px 70px rgba(0,0,0,.6);
     min-width: 0;
   }
+  .console::before, .console::after {
+    content: ""; position: absolute; width: 14px; height: 14px; border: 1px solid var(--ice); pointer-events: none;
+  }
+  .console::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .console::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
   .letterhead {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: baseline;
+    display: grid;
+    grid-template-columns: 1fr auto;
     gap: 6px 20px;
-    padding: 18px 24px 14px;
+    align-items: end;
+    padding: 18px 24px 0;
     border-bottom: 1px solid var(--line);
+    position: relative;
   }
   .institute {
     font-family: var(--font-display);
-    font-size: 22px;
-    letter-spacing: .04em;
+    font-size: 24px;
+    letter-spacing: .06em;
     text-transform: uppercase;
     color: var(--fg);
     margin: 0;
     font-weight: 500;
+    position: relative;
+  }
+  .institute.glitch { animation: glitch .18s steps(2, end) 1; }
+  @keyframes glitch {
+    0% { transform: translateX(0); color: var(--fg); text-shadow: none; }
+    30% { transform: translateX(-2px); color: #f0d0d0; text-shadow: 2px 0 var(--blood), -2px 0 var(--ice-deep); }
+    60% { transform: translateX(1px); text-shadow: -1px 0 var(--blood), 1px 0 var(--ice-deep); }
+    100% { transform: translateX(0); color: var(--fg); text-shadow: none; }
   }
   .institute small {
     display: block;
-    font-size: 12px;
-    letter-spacing: .22em;
+    font-size: 11px;
+    letter-spacing: .26em;
     color: var(--fg-muted);
     font-family: var(--font-mono);
     text-transform: uppercase;
     margin-top: 2px;
+    font-weight: 400;
   }
-  .ref {
+  .meta {
+    text-align: right;
     font-size: 11px;
     letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--fg-dim);
     font-variant-numeric: tabular-nums;
+    display: grid; gap: 2px;
+    padding-bottom: 4px;
   }
+  .meta .clock { color: var(--fg-muted); }
+  .meta .clock.past { color: #d98a8a; text-shadow: 0 0 8px rgba(139, 26, 26, .6); }
+  .meta .link { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ice); box-shadow: 0 0 8px var(--ice-glow);
+    animation: pulse 2.2s ease-in-out infinite;
+    flex: none;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+  .eeg {
+    grid-column: 1 / -1;
+    width: 100%; height: 42px; display: block;
+    margin-top: 10px;
+  }
+
   .screen { padding: 26px 24px 28px; }
   h1 {
     font-family: var(--font-display);
     font-weight: 400;
-    font-size: 26px;
+    font-size: 28px;
     line-height: 1.2;
     margin: 0 0 4px;
     text-wrap: balance;
   }
-  .sub {
-    color: var(--fg-muted);
-    margin: 0 0 24px;
-    font-size: 13px;
-  }
+  .sub { color: var(--fg-muted); margin: 0 0 24px; font-size: 13px; max-width: 60ch; }
   .eyebrow {
-    font-size: 11px;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--ice);
-    margin: 0 0 12px;
+    font-size: 11px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--ice); margin: 0 0 12px;
+    display: flex; align-items: center; gap: 10px;
   }
-  form { display: grid; gap: 18px; max-width: 420px; }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--ice-deep), transparent); opacity: .6; }
+
+  form { display: grid; gap: 18px; max-width: 440px; }
   .field { display: grid; gap: 6px; }
-  label {
-    font-size: 11px;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: var(--fg-muted);
-  }
-  input[type="text"], input[type="password"] {
-    font: inherit;
-    font-size: 16px;
-    letter-spacing: .06em;
-    color: var(--fg);
-    background: var(--bg-inset);
-    border: 1px solid var(--line-strong);
-    border-radius: 0;
-    padding: 10px 12px;
-    width: 100%;
-    text-transform: uppercase;
+  label { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--fg-muted); }
+  input[type="text"] {
+    font: inherit; font-size: 16px; letter-spacing: .08em;
+    color: var(--fg); background: var(--bg-inset);
+    border: 1px solid var(--line-strong); border-radius: 0;
+    padding: 11px 12px; width: 100%; text-transform: uppercase;
+    transition: border-color .2s, box-shadow .2s;
   }
   input::placeholder { color: var(--fg-dim); text-transform: none; letter-spacing: 0; }
-  input:focus { outline: 2px solid var(--ice-deep); outline-offset: 1px; border-color: var(--ice-deep); }
+  input:focus { outline: none; border-color: var(--ice-deep); box-shadow: 0 0 0 1px var(--ice-deep), 0 0 18px rgba(31,143,176,.25); }
   .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
   button {
-    font: inherit;
-    font-weight: 600;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    font-size: 12px;
-    color: var(--bg);
-    background: var(--ice);
-    border: 1px solid var(--ice);
-    padding: 11px 20px;
-    cursor: pointer;
+    font: inherit; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; font-size: 12px;
+    color: var(--bg); background: var(--ice); border: 1px solid var(--ice);
+    padding: 11px 22px; cursor: pointer; position: relative;
+    box-shadow: 0 0 18px rgba(127,227,255,.18);
+    transition: box-shadow .2s, background .2s;
   }
-  button:hover { background: #a9e0ee; }
+  button:hover { background: #a6ecff; box-shadow: 0 0 26px rgba(127,227,255,.35); }
+  button:disabled { opacity: .6; cursor: default; }
   button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
-  button.ghost {
-    background: transparent;
-    color: var(--fg-muted);
-    border-color: var(--line-strong);
-    font-weight: 500;
-  }
+  button.ghost { background: transparent; color: var(--fg-muted); border-color: var(--line-strong); font-weight: 500; box-shadow: none; }
   button.ghost:hover { color: var(--fg); border-color: var(--fg-muted); }
-  .status {
-    min-height: 1.5em;
-    font-size: 13px;
-    color: var(--fg-muted);
-  }
-  .status.error { color: var(--alarm); }
-  .status.busy::after {
-    content: "";
-    display: inline-block;
-    width: .55em; height: 1em;
-    background: var(--ice);
-    vertical-align: text-bottom;
-    margin-left: .3em;
-    animation: blink 1s steps(2, start) infinite;
-  }
+
+  /* Authentication steps */
+  .steps { display: grid; gap: 4px; font-size: 12px; margin-top: 4px; }
+  .steps:empty { display: none; }
+  .step { display: flex; gap: 10px; align-items: baseline; color: var(--fg-dim); }
+  .step .k { color: var(--fg-muted); flex: 1; min-width: 0; }
+  .step .v { font-variant-numeric: tabular-nums; letter-spacing: .1em; }
+  .step.run .v { color: var(--ice); }
+  .step.run .v::after { content: ""; display: inline-block; width: .5em; height: .95em; background: var(--ice); vertical-align: text-bottom; margin-left: .3em; animation: blink .8s steps(2, start) infinite; }
+  .step.ok .v { color: var(--ice); }
+  .step.ko .v { color: var(--alarm); }
+  .step.ok .k, .step.ko .k { color: var(--fg); }
   @keyframes blink { to { visibility: hidden; } }
+  .status { font-size: 13px; color: var(--alarm); }
+  .status:empty { display: none; }
 
   .notice {
-    margin-top: 28px;
-    padding-top: 16px;
-    border-top: 1px dashed var(--line);
-    color: var(--fg-dim);
-    font-size: 12px;
-    max-width: 60ch;
+    margin-top: 28px; padding-top: 16px; border-top: 1px dashed var(--line);
+    color: var(--fg-dim); font-size: 12px; max-width: 60ch;
   }
 
   /* Record view */
-  .record-head {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 8px 20px;
-    margin-bottom: 18px;
-  }
-  .record-id {
-    font-family: var(--font-display);
-    font-size: 28px;
-    line-height: 1.15;
-    margin: 0;
-    font-weight: 500;
-    text-wrap: balance;
-  }
-  .record-id b { color: var(--ice); font-weight: 500; }
+  .record-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 20px; margin-bottom: 18px; }
+  .record-id { font-family: var(--font-display); font-size: 30px; line-height: 1.15; margin: 0; font-weight: 500; text-wrap: balance; }
+  .record-id b { color: var(--ice); font-weight: 500; text-shadow: 0 0 14px var(--ice-glow); }
   .pill {
-    font-size: 11px;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: var(--ice);
-    border: 1px solid var(--ice-deep);
-    padding: 4px 10px;
-    white-space: nowrap;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ice); border: 1px solid var(--ice-deep); padding: 4px 10px; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: inset 0 0 12px rgba(31,143,176,.15);
   }
-  dl {
-    margin: 0;
-    display: grid;
-    grid-template-columns: minmax(11em, 16em) 1fr;
-    border-top: 1px solid var(--line);
-  }
-  dl > div {
-    display: contents;
-  }
-  dt, dd {
-    margin: 0;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--line);
-    min-width: 0;
-  }
-  dt {
-    color: var(--fg-muted);
-    font-size: 12px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    padding-right: 14px;
-  }
+  .pill.warn { color: var(--alarm); border-color: var(--alarm); }
+  .pill.warn .dot { background: var(--alarm); box-shadow: 0 0 8px rgba(227,164,85,.5); }
+  dl { margin: 0; display: grid; grid-template-columns: minmax(11em, 17em) 1fr; border-top: 1px solid var(--line); }
+  dl > div { display: contents; }
+  dt, dd { margin: 0; padding: 9px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+  dt { color: var(--fg-muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding-right: 14px; }
   dd { font-size: 15px; }
   dd.hl { color: var(--ice); }
-  .para {
-    margin: 18px 0 0;
-    max-width: 62ch;
-    color: var(--fg);
-  }
+  dd.scrambling { color: var(--fg-dim); }
+  .row-in dt, .row-in dd { animation: rowIn .4s ease-out both; animation-delay: inherit; }
+  @keyframes rowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+  .para { margin: 18px 0 0; max-width: 62ch; color: var(--fg); }
   .para.muted { color: var(--fg-muted); font-size: 13px; }
   .record-actions { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .anomaly dl { grid-template-columns: minmax(12em, 20em) 1fr; }
 
-  /* Secours: anomalie de restitution */
-  .anomaly dl { grid-template-columns: minmax(12em, 19em) 1fr; }
+  /* Boot overlay */
+  .boot {
+    position: fixed; inset: 0; z-index: 50;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding-block: 24px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    cursor: pointer;
+    transition: opacity .6s ease;
+  }
+  .boot.out { opacity: 0; pointer-events: none; }
+  .boot .inner { width: 100%; max-width: 560px; display: grid; gap: 18px; }
+  .boot .brand { font-family: var(--font-display); font-size: 20px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); margin: 0; }
+  .boot .brand b { color: var(--fg); font-weight: 500; }
+  .boot-lines { display: grid; gap: 4px; font-size: 12px; min-height: 9.5em; color: var(--fg-muted); align-content: start; }
+  .boot-lines div { display: flex; gap: 12px; }
+  .boot-lines .k { flex: 1; min-width: 0; }
+  .boot-lines .v { color: var(--ice); letter-spacing: .1em; font-variant-numeric: tabular-nums; }
+  .boot-lines .v.warn { color: var(--alarm); }
+  .bar { height: 3px; background: var(--line); position: relative; overflow: hidden; }
+  .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ice); box-shadow: 0 0 12px var(--ice-glow); transition: width .35s ease; }
+  .boot .hint { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-dim); text-align: right; }
 
   .foot {
-    margin-top: 16px;
-    font-size: 11px;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--fg-dim);
-    text-align: center;
+    position: relative; z-index: 1;
+    margin-top: 16px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--fg-dim); text-align: center;
   }
   .reveal { animation: reveal .5s ease-out; }
-  @keyframes reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @keyframes reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
-    .reveal, .status.busy::after { animation: none; }
+    .reveal, .row-in dt, .row-in dd, .dot, .ground::after, .step.run .v::after, .institute.glitch { animation: none; }
+    .boot { transition: none; }
   }
-  @media (max-width: 520px) {
-    .screen, .letterhead { padding-left: 16px; padding-right: 16px; }
+  @media (max-width: 560px) {
+    .screen { padding-left: 16px; padding-right: 16px; }
+    .letterhead { padding-left: 16px; padding-right: 16px; grid-template-columns: 1fr; }
+    .meta { text-align: left; }
+    .meta .link { justify-content: flex-start; }
     dl, .anomaly dl { grid-template-columns: 1fr; }
     dt { border-bottom: 0; padding-bottom: 0; }
     dd { padding-top: 2px; }
+    .institute { font-size: 21px; }
   }
 </style>
 </head>
 <body>
 
+<div class="ground" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="boot" id="boot" aria-live="polite">
+  <div class="inner">
+    <p class="brand"><b>Institut Varenne</b> · Terminal des archives</p>
+    <div class="boot-lines" id="boot-lines"></div>
+    <div class="bar"><i id="boot-bar"></i></div>
+    <div class="hint" id="boot-hint">Initialisation</div>
+  </div>
+</div>
+
 <main class="console" id="console">
   <header class="letterhead">
-    <h2 class="institute">Institut Varenne<small>Section neurologique</small></h2>
-    <span class="ref">Archives médicales · Terminal de consultation</span>
+    <h2 class="institute" id="institute">Institut Varenne<small>Section neurologique · Archives médicales</small></h2>
+    <div class="meta">
+      <span class="link"><span class="dot" aria-hidden="true"></span>Liaison archives 1987 · établie</span>
+      <span class="clock" id="clock">--.--.---- — --:--:--</span>
+    </div>
+    <canvas class="eeg" id="eeg" aria-hidden="true"></canvas>
   </header>
 
   <!-- Connexion -->
@@ -285,8 +334,9 @@
       </div>
       <div class="actions">
         <button type="submit" id="btn-login">Consulter</button>
-        <span class="status" id="login-status" aria-live="polite"></span>
       </div>
+      <div class="steps" id="steps" aria-live="polite"></div>
+      <div class="status" id="login-status" aria-live="polite"></div>
     </form>
     <p class="notice">Titulaire enregistré : Dr V. Varenne. Toute consultation est inscrite au registre du service. Les archives antérieures à la mise en service du terminal sont présentées sous forme de copies numériques.</p>
   </section>
@@ -296,16 +346,16 @@
     <p class="eyebrow">Fiche de conservation</p>
     <div class="record-head">
       <h1 class="record-id">Archive des souvenirs <b>M-04 / 314</b></h1>
-      <span class="pill">Disponible</span>
+      <span class="pill"><span class="dot" aria-hidden="true"></span>Disponible</span>
     </div>
-    <dl>
-      <div><dt>Sujet</dt><dd>Gabriel Morel</dd></div>
-      <div><dt>Nature</dt><dd>Dernier souvenir extrait</dd></div>
-      <div><dt>État</dt><dd>Disponible pour restitution</dd></div>
-      <div><dt>Mode de conservation</dt><dd class="hl">Température négative constante</dd></div>
-      <div><dt>Lieu de stockage</dt><dd>Réserve froide de l’annexe médicale</dd></div>
-      <div><dt>Emplacement</dt><dd class="hl">Bac M-04</dd></div>
-      <div><dt>Identification du support</dt><dd class="hl">G. MOREL / 314</dd></div>
+    <dl id="record-rows">
+      <div><dt>Sujet</dt><dd data-text="Gabriel Morel"></dd></div>
+      <div><dt>Nature</dt><dd data-text="Dernier souvenir extrait"></dd></div>
+      <div><dt>État</dt><dd data-text="Disponible pour restitution"></dd></div>
+      <div><dt>Mode de conservation</dt><dd class="hl" data-text="Température négative constante"></dd></div>
+      <div><dt>Lieu de stockage</dt><dd data-text="Réserve froide de l’annexe médicale"></dd></div>
+      <div><dt>Emplacement</dt><dd class="hl" data-text="Bac M-04"></dd></div>
+      <div><dt>Identification du support</dt><dd class="hl" data-text="G. MOREL / 314"></dd></div>
     </dl>
     <p class="para">Le prélèvement C-314 et le support contenant le dernier souvenir sont conservés séparément.</p>
     <p class="para muted">Consultation actuelle : copie numérique issue des archives originales de 1987. Le support informatique de lecture est postérieur au prélèvement.</p>
@@ -319,7 +369,7 @@
     <p class="eyebrow">Archive M-04 / 314</p>
     <div class="record-head">
       <h1 class="record-id">Anomalie de restitution</h1>
-      <span class="pill" style="color: var(--alarm); border-color: var(--alarm);">Correction requise</span>
+      <span class="pill warn"><span class="dot" aria-hidden="true"></span>Correction requise</span>
     </div>
     <dl>
       <div><dt>Origine</dt><dd>Conversion du support original</dd></div>
@@ -337,6 +387,7 @@
 (function () {
   var IDENT = "V.VARENNE";
   var CODE = "RV-6419";
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var views = {
     login: document.getElementById("view-login"),
@@ -347,20 +398,134 @@
   var identEl = document.getElementById("ident");
   var codeEl = document.getElementById("code");
   var statusEl = document.getElementById("login-status");
+  var stepsEl = document.getElementById("steps");
   var btnLogin = document.getElementById("btn-login");
-  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function norm(s) { return (s || "").toUpperCase().replace(/\s+/g, ""); }
   function loose(s) { return norm(s).replace(/[.\-_]/g, ""); }
-
-  function session(get, val) {
+  function store(key, val) {
     try {
-      if (get) return sessionStorage.getItem("varenne") === "1";
-      if (val) sessionStorage.setItem("varenne", "1"); else sessionStorage.removeItem("varenne");
+      if (val === undefined) return sessionStorage.getItem(key);
+      if (val === null) sessionStorage.removeItem(key); else sessionStorage.setItem(key, val);
     } catch (e) {}
-    return false;
+    return null;
   }
 
+  /* ---------- Boot sequence ---------- */
+  var boot = document.getElementById("boot");
+  var bootLines = document.getElementById("boot-lines");
+  var bootBar = document.getElementById("boot-bar");
+  var bootHint = document.getElementById("boot-hint");
+  var BOOT = [
+    ["Initialisation du terminal", "OK", 16],
+    ["Chargement du registre nominatif", "OK", 31],
+    ["Liaison archives 1987 — Grand Hôtel des Champs", "ÉTABLIE", 52],
+    ["Contrôle d’intégrité des archives froides", "98 %", 71, "warn"],
+    ["Capteurs de section neurologique", "ACTIFS", 88],
+    ["Terminal prêt", "", 100]
+  ];
+  var bootDone = false;
+  function endBoot() {
+    if (bootDone) return;
+    bootDone = true;
+    store("varenne-boot", "1");
+    boot.classList.add("out");
+    setTimeout(function () { boot.hidden = true; }, reduced ? 0 : 650);
+  }
+  function runBoot() {
+    var i = 0;
+    function next() {
+      if (i >= BOOT.length) { bootHint.textContent = "Accès au terminal"; setTimeout(endBoot, 500); return; }
+      var item = BOOT[i++];
+      var row = document.createElement("div");
+      var k = document.createElement("span"); k.className = "k"; k.textContent = item[0];
+      var v = document.createElement("span"); v.className = "v" + (item[3] ? " " + item[3] : ""); v.textContent = item[1];
+      row.appendChild(k); row.appendChild(v);
+      bootLines.appendChild(row);
+      bootBar.style.width = item[2] + "%";
+      bootHint.textContent = item[2] + " %";
+      setTimeout(next, 260 + Math.random() * 320);
+    }
+    next();
+  }
+  boot.addEventListener("click", endBoot);
+  if (store("varenne-boot") === "1" || reduced) {
+    boot.hidden = true; bootDone = true;
+  } else {
+    runBoot();
+    setTimeout(endBoot, 6000);
+  }
+
+  /* ---------- Clock with a brief slip back to 1987 ---------- */
+  var clockEl = document.getElementById("clock");
+  var instituteEl = document.getElementById("institute");
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function tick() {
+    var d = new Date();
+    clockEl.textContent = pad(d.getDate()) + "." + pad(d.getMonth() + 1) + "." + d.getFullYear() + " — " +
+      pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+  tick(); setInterval(tick, 1000);
+  function slip() {
+    if (reduced) return;
+    clockEl.classList.add("past");
+    clockEl.textContent = "31.10.1987 — 20:00:00";
+    instituteEl.classList.add("glitch");
+    setTimeout(function () { clockEl.classList.remove("past"); instituteEl.classList.remove("glitch"); tick(); }, 140);
+    setTimeout(slip, 14000 + Math.random() * 16000);
+  }
+  setTimeout(slip, 9000);
+
+  /* ---------- EEG trace ---------- */
+  var canvas = document.getElementById("eeg");
+  var ctx = canvas.getContext && canvas.getContext("2d");
+  var eegX = 0, eegPhase = 0;
+  function sizeCanvas() {
+    var r = canvas.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.floor(r.width * dpr));
+    canvas.height = Math.max(1, Math.floor(r.height * dpr));
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    eegX = 0;
+    if (ctx) ctx.clearRect(0, 0, r.width, r.height);
+  }
+  function eegY(x, w, h) {
+    var mid = h / 2;
+    var t = x / w * Math.PI * 2 * 6 + eegPhase;
+    var spike = Math.pow(Math.max(0, Math.sin(t * 0.5)), 24) * (h * 0.42);
+    return mid - (Math.sin(t) * 3 + Math.sin(t * 3.7) * 2 + spike * (Math.sin(t * 0.5) > 0 ? 1 : -0.3));
+  }
+  function drawEEG() {
+    if (!ctx) return;
+    var r = canvas.getBoundingClientRect(), w = r.width, h = r.height;
+    if (!w) { requestAnimationFrame(drawEEG); return; }
+    ctx.fillStyle = "rgba(9,16,22,0.9)";
+    ctx.fillRect(eegX, 0, 14, h);
+    ctx.strokeStyle = "#7fe3ff";
+    ctx.shadowColor = "rgba(127,227,255,.6)";
+    ctx.shadowBlur = 6;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(eegX - 2, eegY(eegX - 2, w, h));
+    ctx.lineTo(eegX, eegY(eegX, w, h));
+    ctx.lineTo(eegX + 2, eegY(eegX + 2, w, h));
+    ctx.stroke();
+    eegX += 2;
+    if (eegX > w) { eegX = 0; eegPhase += Math.random() * 2; }
+    requestAnimationFrame(drawEEG);
+  }
+  function drawStaticEEG() {
+    if (!ctx) return;
+    var r = canvas.getBoundingClientRect(), w = r.width, h = r.height;
+    ctx.strokeStyle = "#7fe3ff"; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (var x = 0; x <= w; x += 2) { var y = eegY(x, w, h); if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+    ctx.stroke();
+  }
+  sizeCanvas();
+  window.addEventListener("resize", function () { sizeCanvas(); if (reduced) drawStaticEEG(); });
+  if (reduced) drawStaticEEG(); else requestAnimationFrame(drawEEG);
+
+  /* ---------- Views ---------- */
   function show(name) {
     Object.keys(views).forEach(function (k) { views[k].hidden = (k !== name); });
     if (!reduced) {
@@ -368,46 +533,102 @@
       void views[name].offsetWidth;
       views[name].classList.add("reveal");
     }
+    if (name === "record") revealRecord();
+  }
+
+  var SCRAMBLE = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%&/·";
+  function scramble(el, text, delay) {
+    el.textContent = "";
+    el.classList.add("scrambling");
+    var frames = 0, total = reduced ? 0 : 14;
+    setTimeout(function step() {
+      if (frames >= total) { el.textContent = text; el.classList.remove("scrambling"); return; }
+      var out = "";
+      var settled = Math.floor(text.length * frames / total);
+      for (var i = 0; i < text.length; i++) {
+        var c = text[i];
+        out += (i < settled || c === " " || c === "/" || c === "-" || c === "’") ? c : SCRAMBLE[Math.floor(Math.random() * SCRAMBLE.length)];
+      }
+      el.textContent = out; frames++;
+      setTimeout(step, 38);
+    }, delay);
+  }
+  function revealRecord() {
+    var rows = document.querySelectorAll("#record-rows > div");
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i], dd = row.querySelector("dd");
+      row.classList.remove("row-in"); void row.offsetWidth;
+      row.style.animationDelay = reduced ? "0s" : (i * 0.12) + "s";
+      row.classList.add("row-in");
+      scramble(dd, dd.getAttribute("data-text"), reduced ? 0 : 120 + i * 120);
+    }
   }
 
   function route() {
     var h = (location.hash || "").replace("#", "").toLowerCase();
     if (h === "anomalie" || h === "anomaly") { show("anomaly"); return; }
-    if (session(true)) { show("record"); return; }
+    if (store("varenne") === "1") { show("record"); return; }
     show("login");
+  }
+
+  /* ---------- Authentication steps ---------- */
+  function addStep(label) {
+    var row = document.createElement("div"); row.className = "step run";
+    var k = document.createElement("span"); k.className = "k"; k.textContent = label;
+    var v = document.createElement("span"); v.className = "v"; v.textContent = "";
+    row.appendChild(k); row.appendChild(v); stepsEl.appendChild(row);
+    return row;
+  }
+  function settle(row, ok, text) {
+    row.className = "step " + (ok ? "ok" : "ko");
+    row.querySelector(".v").textContent = text;
   }
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
+    if (btnLogin.disabled) return;
     var okIdent = loose(identEl.value) === loose(IDENT);
     var okCode = loose(codeEl.value) === loose(CODE);
-    statusEl.className = "status busy";
-    statusEl.textContent = "Vérification des références";
+    var empty = !identEl.value.trim() || !codeEl.value.trim();
+    statusEl.textContent = "";
+    stepsEl.innerHTML = "";
     btnLogin.disabled = true;
-    var delay = reduced ? 50 : 900;
-    setTimeout(function () {
+    var t = reduced ? 30 : 520;
+
+    function fail(msg) {
+      statusEl.textContent = msg;
       btnLogin.disabled = false;
-      if (okIdent && okCode) {
-        statusEl.className = "status";
-        statusEl.textContent = "";
-        session(false, true);
-        identEl.value = ""; codeEl.value = "";
-        show("record");
-        return;
-      }
-      statusEl.className = "status error";
-      if (!identEl.value.trim() || !codeEl.value.trim()) {
-        statusEl.textContent = "Références incomplètes. Renseignez l’identifiant et le code de consultation.";
-      } else if (!okIdent) {
-        statusEl.textContent = "Accès refusé. Identifiant non reconnu : la consultation est nominative.";
-      } else {
-        statusEl.textContent = "Accès refusé. Le code de consultation ne correspond pas à la carte du titulaire.";
-      }
-    }, delay);
+    }
+
+    var s1 = addStep("Lecture des références de la carte");
+    setTimeout(function () {
+      if (empty) { settle(s1, false, "INCOMPLET"); fail("Références incomplètes. Renseignez l’identifiant et le code de consultation."); return; }
+      settle(s1, true, "OK");
+      var s2 = addStep("Contrôle du titulaire");
+      setTimeout(function () {
+        if (!okIdent) { settle(s2, false, "REFUSÉ"); fail("Accès refusé. Identifiant non reconnu : la consultation est nominative."); return; }
+        settle(s2, true, "DR V. VARENNE");
+        var s3 = addStep("Vérification du code de consultation");
+        setTimeout(function () {
+          if (!okCode) { settle(s3, false, "REFUSÉ"); fail("Accès refusé. Le code de consultation ne correspond pas à la carte du titulaire."); return; }
+          settle(s3, true, "OK");
+          var s4 = addStep("Ouverture des archives froides");
+          setTimeout(function () {
+            settle(s4, true, "M-04");
+            setTimeout(function () {
+              btnLogin.disabled = false;
+              store("varenne", "1");
+              identEl.value = ""; codeEl.value = ""; stepsEl.innerHTML = "";
+              show("record");
+            }, reduced ? 0 : 400);
+          }, t);
+        }, t);
+      }, t);
+    }, t);
   });
 
   document.getElementById("btn-logout").addEventListener("click", function () {
-    session(false, false);
+    store("varenne", null);
     show("login");
     identEl.focus();
   });
