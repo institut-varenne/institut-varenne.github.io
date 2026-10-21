@@ -1,41 +1,9 @@
 DOSSIER MEDIA — DOCUMENTS NUMERIQUES (fiche M-04 / 314)
 =======================================================
-Deposez ici vos fichiers avec EXACTEMENT ces noms, puis demandez a Claude de pousser
-(ou faites un commit/push vous-meme). Tant qu'un fichier manque, le site affiche a sa
-place une "copie degradee" generee par le navigateur.
+  cliche-1.png   Cliche 1/2 — Preparation du sujet (= horror_1.png)
+  cliche-2.png   Cliche 2/2 — Trepanation (= horror_2 (1).png), sert aussi de base a la "video camera 02"
 
-  trepanation-1.jpg     Cliche 1/3 — Preparation du sujet       (format 4:3 conseille, < 2 Mo)
-  trepanation-2.jpg     Cliche 2/3 — Trepanation                (idem)
-  trepanation-3.jpg     Cliche 3/3 — Prelevement C-314          (idem)
-  (plus de fichier video a fournir : la video "camera 02" est fabriquee par le site a partir de trepanation-2.jpg,
-   avec scintillements, extinctions d ecran, secousses et bande-son scie + cris synthetisee)
-
-PROMPTS SUGGERES (image : Midjourney, Flux, Ideogram, DALL-E ; video : Sora, Runway Gen-3, Kling, Veo, Pika)
-
-Photo 1 — Preparation
-  "Grainy 1987 medical archive photograph, black and white with slight sepia, a man in a dark
-   uniform strapped to a heavy wooden chair with leather straps on wrists and forehead, in a
-   dim tiled clinic room under a single hanging lamp, shot from a security camera angle,
-   scratched film, timestamp 31.10.1987 in the corner, no gore, ominous."
-
-Photo 2 — Trepanation
-  "Grainy 1987 archive photograph, surgeon silhouette in white coat holding an electric bone
-   saw close to the shaved head of a man strapped to a chair, harsh overhead lamp, blurred
-   motion of the blade, high contrast, scratched film, analog grain, dark horror atmosphere,
-   mostly shadows, implied not explicit."
-
-Photo 3 — Prelevement C-314
-  "Grainy 1987 archive photograph, a glass specimen jar labelled C-314 on a steel tray next to
-   surgical tools, dim clinic, overhead lamp, scratched film, analog grain, cold blue-grey tint,
-   sinister still life, no faces."
-
-Video — Camera 02
-  "Found-footage style security camera video, 1987 VHS look with timestamp, static noise and
-   tracking lines. A man strapped to a wooden chair in a dark tiled room under a swinging lamp.
-   A doctor in a white coat enters from the right holding an electric saw; the blade spins up;
-   the man thrashes against the straps as the doctor leans toward his head; the image tears and
-   flickers, then cuts to static. 15 seconds, handheld-free fixed camera, horror, implied not
-   explicit."
-  Son : la plupart des generateurs video ne produisent pas de son. Ajoutez une piste audio avec
-  un montage simple (CapCut, DaVinci Resolve) : bruit de scie electrique + cris (banques de sons
-  gratuites : freesound.org, pixabay.com/sound-effects). Exportez en MP4 H.264/AAC.
+La video n'est pas un fichier : le site anime cliche-2.png (scintillements, extinctions d'ecran,
+secousses, dechirures) avec une bande-son scie + cris synthetisee par le navigateur.
+Pour remplacer une image : ecrasez le fichier en gardant le meme nom, puis commit/push
+(ou demandez a Claude de pousser).

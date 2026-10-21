@@ -276,7 +276,7 @@
 
   /* Documents numériques */
   .docs { margin-top: 28px; }
-  .docs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .docs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .doc {
     position: relative; border: 1px solid var(--line-strong); background: var(--bg-inset); aspect-ratio: 4 / 3; overflow: hidden;
     cursor: pointer; padding: 0; text-align: left; color: var(--fg); box-shadow: none; max-width: 100%; min-width: 0; width: 100%;
@@ -428,19 +428,15 @@
     <div class="docs">
       <p class="eyebrow">Documents numériques · Procédure C-314</p>
       <div class="docs-grid" id="docs-grid">
-        <button type="button" class="doc" data-kind="img" data-src="media/trepanation-1.jpg" data-cap="Cliché 1 / 3 — Préparation du sujet — 31.10.1987 · 23:41">
+        <button type="button" class="doc" data-kind="img" data-src="media/cliche-1.png" data-cap="Cliché 1 / 2 — Préparation du sujet — 31.10.1987 · 23:41">
           <span class="stamp">31.10.1987 · 23:41</span>
-          <span class="tag"><b>Cliché 1 / 3</b>Préparation du sujet</span>
+          <span class="tag"><b>Cliché 1 / 2</b>Préparation du sujet</span>
         </button>
-        <button type="button" class="doc" data-kind="img" data-src="media/trepanation-2.jpg" data-cap="Cliché 2 / 3 — Trépanation — 31.10.1987 · 23:47">
-          <span class="stamp">31.10.1987 · 23:47</span>
-          <span class="tag"><b>Cliché 2 / 3</b>Trépanation</span>
+        <button type="button" class="doc" data-kind="img" data-src="media/cliche-2.png" data-cap="Cliché 2 / 2 — Trépanation — 31.10.1987 · 23:52">
+          <span class="stamp">31.10.1987 · 23:52</span>
+          <span class="tag"><b>Cliché 2 / 2</b>Trépanation</span>
         </button>
-        <button type="button" class="doc" data-kind="img" data-src="media/trepanation-3.jpg" data-cap="Cliché 3 / 3 — Prélèvement C-314 — 31.10.1987 · 23:58">
-          <span class="stamp">31.10.1987 · 23:58</span>
-          <span class="tag"><b>Cliché 3 / 3</b>Prélèvement C-314</span>
-        </button>
-        <button type="button" class="doc video" data-kind="video" data-src="media/trepanation-2.jpg" data-cap="Enregistrement — Caméra 02 — Séance d’extraction — 31.10.1987 · 23:52">
+        <button type="button" class="doc video" data-kind="video" data-src="media/cliche-2.png" data-cap="Enregistrement — Caméra 02 — Séance d’extraction — 31.10.1987 · 23:52">
           <span class="rec">REC · CAM 02</span>
           <span class="stamp">31.10.1987 · 23:52</span>
           <span class="play"><i></i></span>
@@ -944,8 +940,10 @@
       g.fillStyle = "rgba(220,230,235,0.85)";
       g.font = Math.round(12 * sx) + "px IBM Plex Mono, monospace";
       g.textBaseline = "top";
-      g.fillText("CAM 02", 14 * sx, 12 * sy);
-      g.fillStyle = "#e05050"; g.beginPath(); g.arc(78 * sx, 19 * sy, 4 * sx, 0, Math.PI * 2); if (Math.floor(t * 2) % 2 === 0 || opts.still) g.fill();
+      if (!opts.hudNoCam) {
+        g.fillText("CAM 02", 14 * sx, 12 * sy);
+        g.fillStyle = "#e05050"; g.beginPath(); g.arc(78 * sx, 19 * sy, 4 * sx, 0, Math.PI * 2); if (Math.floor(t * 2) % 2 === 0 || opts.still) g.fill();
+      }
       g.fillStyle = "rgba(220,230,235,0.85)";
       var mm = 52 + Math.floor(t / 60), ss = Math.floor(t) % 60;
       g.textAlign = "right";
@@ -1022,7 +1020,8 @@
     var dw = iw * scale, dh = ih * scale;
     var ox = (w - dw) / 2 + (opts.shake ? (Math.random() - .5) * opts.shake : 0);
     var oy = (h - dh) / 2 + (opts.shake ? (Math.random() - .5) * opts.shake : 0);
-    g.filter = "grayscale(" + (opts.gray === undefined ? 0.85 : opts.gray) + ") contrast(1.15)";
+    opts.hudNoCam = true;  // the photos already carry their own CAM 02 / REC overlay
+    g.filter = "grayscale(" + (opts.gray === undefined ? 0.3 : opts.gray) + ") contrast(1.12)";
     g.drawImage(img, ox, oy, dw, dh);
     g.filter = "none";
     // cold tint
@@ -1043,7 +1042,7 @@
     var opts = { still: true, grain: 0.22, doctor: 0, caption: "" };
     if (kind === "video") { opts.doctor = 1; opts.sawOn = false; }
     else if (idx === 1) { opts.doctor = 0.9; opts.sawOn = false; }
-    else if (idx === 2) { opts.doctor = 1; opts.cutting = true; opts.sawOn = true; }
+    else if (idx === 1) { opts.doctor = 1; opts.cutting = true; opts.sawOn = true; }
     drawScene(cv.getContext("2d"), cv.width, cv.height, 3, opts);
     return cv;
   }
@@ -1228,7 +1227,7 @@
         capEl.innerHTML = "<b>" + cap + "</b>Support original restauré";
       } else {
         var cv = document.createElement("canvas"); cv.width = 960; cv.height = 540; frame.appendChild(cv);
-        var o = { still: true, grain: 0.2, doctor: idx === 0 ? 0 : (idx === 1 ? 0.9 : 1), sawOn: idx === 2, cutting: idx === 2 };
+        var o = { still: true, grain: 0.2, doctor: idx === 0 ? 0 : 1, sawOn: idx === 1, cutting: idx === 1 };
         drawScene(cv.getContext("2d"), cv.width, cv.height, 3, o);
         capEl.innerHTML = "<b>" + cap + "</b><span class=\"warn\">Support original illisible — copie dégradée</span>";
       }
