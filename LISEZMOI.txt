@@ -16,6 +16,8 @@ RÉFÉRENCES DU JEU
 PAGES CACHÉES (à taper à la fin de l'adresse, jamais affichées aux joueurs)
   #anomalie   fiche de secours « Anomalie de restitution » (acte IV)
   « Fermer la session » revient à la page de connexion pour la partie suivante.
+  Le son (musique d ambiance et effets) est genere par le navigateur, sans fichier audio.
+  Bouton « Son actif / Son coupe » en haut a droite du terminal. Le son demarre au clic « Appuyer pour initialiser ».
 
 HÉBERGEMENT GRATUIT (si vous voulez une autre adresse que celle de claude.ai)
   Netlify Drop : https://app.netlify.com/drop

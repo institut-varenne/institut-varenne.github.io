@@ -7,13 +7,13 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-  /* Layout: a full-screen clinical terminal. Boot overlay, then one centered console with an EEG trace in the header.
-     Single dark theme by design: this is a screen inside the game. */
+  /* Layout: full-screen clinical terminal. Press-to-boot overlay (unlocks audio), then one centered console:
+     header with EEG trace + telemetry tiles + hex stream, then the active view. Single dark theme by design. */
   :root {
-    --bg: #050809;
-    --bg-panel: rgba(9, 16, 22, 0.92);
-    --bg-inset: #070d12;
-    --line: #15232d;
+    --bg: #04070a;
+    --bg-panel: rgba(8, 14, 20, 0.9);
+    --bg-inset: #060b10;
+    --line: #14222c;
     --line-strong: #244052;
     --fg: #d9e6ee;
     --fg-muted: #7d97a8;
@@ -46,74 +46,70 @@
     position: relative;
     overflow-x: hidden;
   }
-  /* Technological ground: fine grid, slow sweep, scanlines, vignette */
+  /* Ground: grid, sweep, scanlines, vignette */
   .ground {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
     background:
-      radial-gradient(ellipse 70% 55% at 50% 35%, rgba(31, 143, 176, 0.14), transparent 70%),
+      radial-gradient(ellipse 70% 55% at 50% 35%, rgba(31, 143, 176, 0.16), transparent 70%),
       linear-gradient(var(--line) 1px, transparent 1px),
       linear-gradient(90deg, var(--line) 1px, transparent 1px);
     background-size: auto, 44px 44px, 44px 44px;
     background-position: center, center, center;
-    opacity: .55;
-    overflow: hidden;
+    opacity: .6;
   }
   .ground::before {
-    content: "";
-    position: absolute; inset: 0;
-    background: linear-gradient(rgba(0,0,0,.18) 1px, transparent 1px);
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(rgba(0,0,0,.2) 1px, transparent 1px);
     background-size: 100% 3px;
-    mix-blend-mode: multiply;
   }
   .ground::after {
-    content: "";
-    position: absolute; left: 0; right: 0; height: 160px; top: -160px;
-    background: linear-gradient(180deg, transparent, rgba(127, 227, 255, 0.07), transparent);
-    animation: sweep 9s linear infinite;
+    content: ""; position: absolute; left: 0; right: 0; height: 160px; top: -160px;
+    background: linear-gradient(180deg, transparent, rgba(127, 227, 255, 0.08), transparent);
+    animation: sweep 8s linear infinite;
   }
   @keyframes sweep { to { transform: translateY(calc(100vh + 320px)); } }
   .vignette {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 55%, rgba(0,0,0,.75) 100%);
+    background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 55%, rgba(0,0,0,.8) 100%);
   }
+  /* Rings in the background */
+  .rings { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; opacity: .18; }
+  .rings svg { width: min(120vmin, 900px); height: min(120vmin, 900px); }
+  .rings .r1 { animation: spin 60s linear infinite; transform-origin: 50% 50%; }
+  .rings .r2 { animation: spin 90s linear infinite reverse; transform-origin: 50% 50%; }
+  .rings .r3 { animation: spin 140s linear infinite; transform-origin: 50% 50%; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .console {
     position: relative; z-index: 1;
-    width: 100%;
-    max-width: 760px;
+    width: 100%; max-width: 820px;
     border: 1px solid var(--line-strong);
     background: var(--bg-panel);
     backdrop-filter: blur(6px);
-    box-shadow:
-      0 0 0 1px rgba(0,0,0,.7),
-      0 0 40px rgba(31, 143, 176, 0.12),
-      0 30px 70px rgba(0,0,0,.6);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.7), 0 0 50px rgba(31, 143, 176, 0.14), 0 30px 70px rgba(0,0,0,.6);
     min-width: 0;
+    overflow: hidden;
   }
   .console::before, .console::after {
-    content: ""; position: absolute; width: 14px; height: 14px; border: 1px solid var(--ice); pointer-events: none;
+    content: ""; position: absolute; width: 16px; height: 16px; border: 1px solid var(--ice); pointer-events: none; z-index: 2;
   }
   .console::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
   .console::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+  /* Scan bar that sweeps the console */
+  .scanbar {
+    position: absolute; left: 0; right: 0; height: 2px; top: 0;
+    background: linear-gradient(90deg, transparent, var(--ice-glow), transparent);
+    animation: scan 5s ease-in-out infinite; pointer-events: none; opacity: .7;
+  }
+  @keyframes scan { 0% { top: 0; } 50% { top: calc(100% - 2px); } 100% { top: 0; } }
 
   .letterhead {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 6px 20px;
-    align-items: end;
-    padding: 18px 24px 0;
-    border-bottom: 1px solid var(--line);
-    position: relative;
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 20px; align-items: end;
+    padding: 18px 24px 0; border-bottom: 1px solid var(--line); position: relative;
   }
   .institute {
-    font-family: var(--font-display);
-    font-size: 24px;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--fg);
-    margin: 0;
-    font-weight: 500;
-    position: relative;
+    font-family: var(--font-display); font-size: 24px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--fg); margin: 0; font-weight: 500; position: relative;
   }
   .institute.glitch { animation: glitch .18s steps(2, end) 1; }
   @keyframes glitch {
@@ -123,85 +119,89 @@
     100% { transform: translateX(0); color: var(--fg); text-shadow: none; }
   }
   .institute small {
-    display: block;
-    font-size: 11px;
-    letter-spacing: .26em;
-    color: var(--fg-muted);
-    font-family: var(--font-mono);
-    text-transform: uppercase;
-    margin-top: 2px;
-    font-weight: 400;
+    display: block; font-size: 11px; letter-spacing: .26em; color: var(--fg-muted);
+    font-family: var(--font-mono); text-transform: uppercase; margin-top: 2px; font-weight: 400;
   }
   .meta {
-    text-align: right;
-    font-size: 11px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--fg-dim);
-    font-variant-numeric: tabular-nums;
-    display: grid; gap: 2px;
-    padding-bottom: 4px;
+    text-align: right; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--fg-dim); font-variant-numeric: tabular-nums; display: grid; gap: 4px; padding-bottom: 4px; justify-items: end;
   }
   .meta .clock { color: var(--fg-muted); }
   .meta .clock.past { color: #d98a8a; text-shadow: 0 0 8px rgba(139, 26, 26, .6); }
-  .meta .link { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .meta .link { display: inline-flex; align-items: center; gap: 6px; }
   .dot {
-    width: 6px; height: 6px; border-radius: 50%;
+    width: 6px; height: 6px; border-radius: 50%; flex: none;
     background: var(--ice); box-shadow: 0 0 8px var(--ice-glow);
     animation: pulse 2.2s ease-in-out infinite;
-    flex: none;
   }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
-  .eeg {
-    grid-column: 1 / -1;
-    width: 100%; height: 42px; display: block;
-    margin-top: 10px;
+  .snd {
+    font: inherit; font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--fg-muted); background: transparent; border: 1px solid var(--line-strong);
+    padding: 3px 8px; cursor: pointer; box-shadow: none; display: inline-flex; align-items: center; gap: 6px;
   }
+  .snd:hover { color: var(--fg); border-color: var(--fg-muted); background: transparent; box-shadow: none; }
+  .snd .bars { display: inline-flex; gap: 2px; align-items: flex-end; height: 10px; }
+  .snd .bars i { width: 2px; background: var(--ice); height: 3px; animation: eq .9s ease-in-out infinite; }
+  .snd .bars i:nth-child(2) { animation-delay: .15s; } .snd .bars i:nth-child(3) { animation-delay: .3s; } .snd .bars i:nth-child(4) { animation-delay: .45s; }
+  .snd.off .bars i { animation: none; height: 2px; opacity: .4; }
+  @keyframes eq { 0%, 100% { height: 3px; } 50% { height: 10px; } }
+  .eeg { grid-column: 1 / -1; width: 100%; height: 44px; display: block; margin-top: 10px; }
 
-  .screen { padding: 26px 24px 28px; }
-  h1 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    font-size: 28px;
-    line-height: 1.2;
-    margin: 0 0 4px;
-    text-wrap: balance;
+  /* Telemetry */
+  .telemetry {
+    display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line);
   }
+  .tile { padding: 10px 14px; border-right: 1px solid var(--line); min-width: 0; }
+  .tile:last-child { border-right: 0; }
+  .tile .l { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--fg-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .v { font-size: 15px; color: var(--fg); font-variant-numeric: tabular-nums; letter-spacing: .04em; white-space: nowrap; }
+  .tile .v b { color: var(--ice); font-weight: 500; }
+  .tile .g { height: 2px; background: var(--line); margin-top: 6px; position: relative; overflow: hidden; }
+  .tile .g i { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: var(--ice-deep); transition: width .6s ease; }
+  .hex {
+    font-size: 10px; letter-spacing: .12em; color: var(--fg-dim); padding: 6px 24px; border-bottom: 1px solid var(--line);
+    white-space: nowrap; overflow: hidden; font-variant-numeric: tabular-nums;
+  }
+  .hex b { color: var(--ice-deep); font-weight: 400; }
+
+  .screen { padding: 26px 24px 28px; position: relative; }
+  h1 { font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.2; margin: 0 0 4px; text-wrap: balance; }
   .sub { color: var(--fg-muted); margin: 0 0 24px; font-size: 13px; max-width: 60ch; }
   .eyebrow {
-    font-size: 11px; letter-spacing: .22em; text-transform: uppercase;
-    color: var(--ice); margin: 0 0 12px;
+    font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--ice); margin: 0 0 12px;
     display: flex; align-items: center; gap: 10px;
   }
   .eyebrow::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--ice-deep), transparent); opacity: .6; }
 
-  form { display: grid; gap: 18px; max-width: 440px; }
+  form { display: grid; gap: 18px; max-width: 460px; }
   .field { display: grid; gap: 6px; }
   label { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--fg-muted); }
+  .inwrap { position: relative; }
   input[type="text"] {
-    font: inherit; font-size: 16px; letter-spacing: .08em;
-    color: var(--fg); background: var(--bg-inset);
-    border: 1px solid var(--line-strong); border-radius: 0;
-    padding: 11px 12px; width: 100%; text-transform: uppercase;
+    font: inherit; font-size: 16px; letter-spacing: .08em; color: var(--fg); background: var(--bg-inset);
+    border: 1px solid var(--line-strong); border-radius: 0; padding: 11px 12px; width: 100%; text-transform: uppercase;
     transition: border-color .2s, box-shadow .2s;
   }
   input::placeholder { color: var(--fg-dim); text-transform: none; letter-spacing: 0; }
-  input:focus { outline: none; border-color: var(--ice-deep); box-shadow: 0 0 0 1px var(--ice-deep), 0 0 18px rgba(31,143,176,.25); }
+  input:focus { outline: none; border-color: var(--ice-deep); box-shadow: 0 0 0 1px var(--ice-deep), 0 0 22px rgba(31,143,176,.3); }
+  .inwrap::after {
+    content: ""; position: absolute; right: 10px; top: 50%; width: 6px; height: 6px; margin-top: -3px;
+    border: 1px solid var(--line-strong); transform: rotate(45deg); pointer-events: none;
+  }
+  .inwrap:focus-within::after { border-color: var(--ice); box-shadow: 0 0 8px var(--ice-glow); }
   .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
   button {
     font: inherit; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; font-size: 12px;
-    color: var(--bg); background: var(--ice); border: 1px solid var(--ice);
-    padding: 11px 22px; cursor: pointer; position: relative;
-    box-shadow: 0 0 18px rgba(127,227,255,.18);
-    transition: box-shadow .2s, background .2s;
+    color: var(--bg); background: var(--ice); border: 1px solid var(--ice); padding: 11px 22px; cursor: pointer; position: relative;
+    box-shadow: 0 0 18px rgba(127,227,255,.2); transition: box-shadow .2s, background .2s;
   }
-  button:hover { background: #a6ecff; box-shadow: 0 0 26px rgba(127,227,255,.35); }
+  button:hover { background: #a6ecff; box-shadow: 0 0 28px rgba(127,227,255,.4); }
   button:disabled { opacity: .6; cursor: default; }
   button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
   button.ghost { background: transparent; color: var(--fg-muted); border-color: var(--line-strong); font-weight: 500; box-shadow: none; }
   button.ghost:hover { color: var(--fg); border-color: var(--fg-muted); }
 
-  /* Authentication steps */
   .steps { display: grid; gap: 4px; font-size: 12px; margin-top: 4px; }
   .steps:empty { display: none; }
   .step { display: flex; gap: 10px; align-items: baseline; color: var(--fg-dim); }
@@ -215,21 +215,14 @@
   @keyframes blink { to { visibility: hidden; } }
   .status { font-size: 13px; color: var(--alarm); }
   .status:empty { display: none; }
+  .notice { margin-top: 28px; padding-top: 16px; border-top: 1px dashed var(--line); color: var(--fg-dim); font-size: 12px; max-width: 60ch; }
 
-  .notice {
-    margin-top: 28px; padding-top: 16px; border-top: 1px dashed var(--line);
-    color: var(--fg-dim); font-size: 12px; max-width: 60ch;
-  }
-
-  /* Record view */
   .record-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 20px; margin-bottom: 18px; }
   .record-id { font-family: var(--font-display); font-size: 30px; line-height: 1.15; margin: 0; font-weight: 500; text-wrap: balance; }
   .record-id b { color: var(--ice); font-weight: 500; text-shadow: 0 0 14px var(--ice-glow); }
   .pill {
-    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--ice); border: 1px solid var(--ice-deep); padding: 4px 10px; white-space: nowrap;
-    display: inline-flex; align-items: center; gap: 8px;
-    box-shadow: inset 0 0 12px rgba(31,143,176,.15);
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ice); border: 1px solid var(--ice-deep);
+    padding: 4px 10px; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; box-shadow: inset 0 0 12px rgba(31,143,176,.15);
   }
   .pill.warn { color: var(--alarm); border-color: var(--alarm); }
   .pill.warn .dot { background: var(--alarm); box-shadow: 0 0 8px rgba(227,164,85,.5); }
@@ -249,20 +242,23 @@
 
   /* Boot overlay */
   .boot {
-    position: fixed; inset: 0; z-index: 50;
-    background: var(--bg);
+    position: fixed; inset: 0; z-index: 50; background: var(--bg);
     display: flex; align-items: center; justify-content: center;
     padding-block: 24px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
-    cursor: pointer;
-    transition: opacity .6s ease;
+    cursor: pointer; transition: opacity .7s ease;
   }
   .boot.out { opacity: 0; pointer-events: none; }
-  .boot .inner { width: 100%; max-width: 560px; display: grid; gap: 18px; }
-  .boot .brand { font-family: var(--font-display); font-size: 20px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); margin: 0; }
+  .boot .inner { width: 100%; max-width: 600px; display: grid; gap: 18px; position: relative; z-index: 1; }
+  .boot .brand { font-family: var(--font-display); font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); margin: 0; }
   .boot .brand b { color: var(--fg); font-weight: 500; }
-  .boot-lines { display: grid; gap: 4px; font-size: 12px; min-height: 9.5em; color: var(--fg-muted); align-content: start; }
+  .boot .press {
+    margin: 10px 0 0; font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--ice);
+    animation: pulse 1.6s ease-in-out infinite; text-align: center; padding: 18px; border: 1px solid var(--line-strong);
+  }
+  .boot .press.on { animation: none; }
+  .boot-lines { display: grid; gap: 4px; font-size: 12px; min-height: 10.5em; color: var(--fg-muted); align-content: start; }
   .boot-lines div { display: flex; gap: 12px; }
   .boot-lines .k { flex: 1; min-width: 0; }
   .boot-lines .v { color: var(--ice); letter-spacing: .1em; font-variant-numeric: tabular-nums; }
@@ -270,23 +266,27 @@
   .bar { height: 3px; background: var(--line); position: relative; overflow: hidden; }
   .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ice); box-shadow: 0 0 12px var(--ice-glow); transition: width .35s ease; }
   .boot .hint { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-dim); text-align: right; }
+  .boot .hexboot { font-size: 10px; letter-spacing: .1em; color: var(--fg-dim); white-space: nowrap; overflow: hidden; opacity: .7; }
+  .boot .hexboot b { color: var(--ice-deep); font-weight: 400; }
+  .boot .flash { position: absolute; inset: 0; background: var(--ice); opacity: 0; pointer-events: none; }
+  .boot .flash.go { animation: flash .5s ease-out 1; }
+  @keyframes flash { 0% { opacity: .35; } 100% { opacity: 0; } }
 
-  .foot {
-    position: relative; z-index: 1;
-    margin-top: 16px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--fg-dim); text-align: center;
-  }
+  .foot { position: relative; z-index: 1; margin-top: 16px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-dim); text-align: center; }
   .reveal { animation: reveal .5s ease-out; }
   @keyframes reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
-    .reveal, .row-in dt, .row-in dd, .dot, .ground::after, .step.run .v::after, .institute.glitch { animation: none; }
+    .reveal, .row-in dt, .row-in dd, .dot, .ground::after, .step.run .v::after, .institute.glitch, .scanbar, .rings *, .boot .press, .snd .bars i { animation: none; }
     .boot { transition: none; }
   }
-  @media (max-width: 560px) {
+  @media (max-width: 640px) {
     .screen { padding-left: 16px; padding-right: 16px; }
     .letterhead { padding-left: 16px; padding-right: 16px; grid-template-columns: 1fr; }
-    .meta { text-align: left; }
-    .meta .link { justify-content: flex-start; }
+    .meta { text-align: left; justify-items: start; }
+    .telemetry { grid-template-columns: 1fr 1fr; }
+    .tile:nth-child(2) { border-right: 0; }
+    .tile:nth-child(1), .tile:nth-child(2) { border-bottom: 1px solid var(--line); }
+    .hex { padding-left: 16px; padding-right: 16px; }
     dl, .anomaly dl { grid-template-columns: 1fr; }
     dt { border-bottom: 0; padding-bottom: 0; }
     dd { padding-top: 2px; }
@@ -297,26 +297,48 @@
 <body>
 
 <div class="ground" aria-hidden="true"></div>
+<div class="rings" aria-hidden="true">
+  <svg viewBox="0 0 400 400" fill="none" stroke="#7fe3ff" stroke-width="0.6">
+    <circle class="r1" cx="200" cy="200" r="190" stroke-dasharray="4 10 40 10"></circle>
+    <circle class="r2" cx="200" cy="200" r="150" stroke-dasharray="80 20 2 20"></circle>
+    <circle class="r3" cx="200" cy="200" r="110" stroke-dasharray="1 6"></circle>
+    <circle cx="200" cy="200" r="60" stroke-opacity="0.4"></circle>
+    <line x1="10" y1="200" x2="390" y2="200" stroke-opacity="0.25"></line>
+    <line x1="200" y1="10" x2="200" y2="390" stroke-opacity="0.25"></line>
+  </svg>
+</div>
 <div class="vignette" aria-hidden="true"></div>
 
 <div class="boot" id="boot" aria-live="polite">
+  <div class="flash" id="boot-flash"></div>
   <div class="inner">
     <p class="brand"><b>Institut Varenne</b> · Terminal des archives</p>
+    <p class="press" id="boot-press">Appuyer pour initialiser le terminal</p>
     <div class="boot-lines" id="boot-lines"></div>
     <div class="bar"><i id="boot-bar"></i></div>
-    <div class="hint" id="boot-hint">Initialisation</div>
+    <div class="hexboot" id="boot-hex"></div>
+    <div class="hint" id="boot-hint">En attente</div>
   </div>
 </div>
 
 <main class="console" id="console">
+  <div class="scanbar" aria-hidden="true"></div>
   <header class="letterhead">
     <h2 class="institute" id="institute">Institut Varenne<small>Section neurologique · Archives médicales</small></h2>
     <div class="meta">
       <span class="link"><span class="dot" aria-hidden="true"></span>Liaison archives 1987 · établie</span>
       <span class="clock" id="clock">--.--.---- — --:--:--</span>
+      <button type="button" class="snd" id="snd" aria-pressed="true"><span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span id="snd-label">Son actif</span></button>
     </div>
     <canvas class="eeg" id="eeg" aria-hidden="true"></canvas>
   </header>
+  <div class="telemetry" aria-hidden="true">
+    <div class="tile"><div class="l">Réserve froide</div><div class="v" id="t-temp">−80.0 °C</div><div class="g"><i id="g-temp" style="width:80%"></i></div></div>
+    <div class="tile"><div class="l">Capteurs neuro</div><div class="v"><b>32</b> canaux</div><div class="g"><i style="width:100%"></i></div></div>
+    <div class="tile"><div class="l">Débit archives</div><div class="v" id="t-rate">1.20 Mo/s</div><div class="g"><i id="g-rate" style="width:40%"></i></div></div>
+    <div class="tile"><div class="l">Intégrité</div><div class="v"><b>98</b> %</div><div class="g"><i style="width:98%"></i></div></div>
+  </div>
+  <div class="hex" id="hex" aria-hidden="true"></div>
 
   <!-- Connexion -->
   <section class="screen" id="view-login">
@@ -326,11 +348,11 @@
     <form id="login-form" autocomplete="off" novalidate>
       <div class="field">
         <label for="ident">Identifiant</label>
-        <input type="text" id="ident" name="ident" placeholder="Titulaire" autocapitalize="characters" spellcheck="false" required>
+        <div class="inwrap"><input type="text" id="ident" name="ident" placeholder="Titulaire" autocapitalize="characters" spellcheck="false" required></div>
       </div>
       <div class="field">
         <label for="code">Code de consultation</label>
-        <input type="text" id="code" name="code" placeholder="Référence de la carte" autocapitalize="characters" spellcheck="false" required>
+        <div class="inwrap"><input type="text" id="code" name="code" placeholder="Référence de la carte" autocapitalize="characters" spellcheck="false" required></div>
       </div>
       <div class="actions">
         <button type="submit" id="btn-login">Consulter</button>
@@ -389,20 +411,6 @@
   var CODE = "RV-6419";
   var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  var views = {
-    login: document.getElementById("view-login"),
-    record: document.getElementById("view-record"),
-    anomaly: document.getElementById("view-anomaly")
-  };
-  var form = document.getElementById("login-form");
-  var identEl = document.getElementById("ident");
-  var codeEl = document.getElementById("code");
-  var statusEl = document.getElementById("login-status");
-  var stepsEl = document.getElementById("steps");
-  var btnLogin = document.getElementById("btn-login");
-
-  function norm(s) { return (s || "").toUpperCase().replace(/\s+/g, ""); }
-  function loose(s) { return norm(s).replace(/[.\-_]/g, ""); }
   function store(key, val) {
     try {
       if (val === undefined) return sessionStorage.getItem(key);
@@ -410,32 +418,168 @@
     } catch (e) {}
     return null;
   }
+  function norm(s) { return (s || "").toUpperCase().replace(/\s+/g, ""); }
+  function loose(s) { return norm(s).replace(/[.\-_]/g, ""); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
 
-  /* ---------- Boot sequence ---------- */
+  /* =============== Audio engine (Web Audio, no files) =============== */
+  var AC = window.AudioContext || window.webkitAudioContext;
+  var audio = { ctx: null, master: null, muted: store("varenne-mute") === "1", drone: null };
+  function audioInit() {
+    if (audio.ctx || !AC) return;
+    try {
+      audio.ctx = new AC();
+      audio.master = audio.ctx.createGain();
+      audio.master.gain.value = audio.muted ? 0 : 0.9;
+      var comp = audio.ctx.createDynamicsCompressor();
+      audio.master.connect(comp); comp.connect(audio.ctx.destination);
+    } catch (e) { audio.ctx = null; }
+  }
+  function now() { return audio.ctx.currentTime; }
+  function tone(opts) {
+    if (!audio.ctx) return;
+    var c = audio.ctx, t0 = now() + (opts.at || 0);
+    var o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+    o.type = opts.type || "sine";
+    o.frequency.setValueAtTime(opts.f, t0);
+    if (opts.f2) o.frequency.exponentialRampToValueAtTime(opts.f2, t0 + (opts.dur || .2));
+    f.type = "lowpass"; f.frequency.value = opts.cut || 6000;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(opts.g || 0.2, t0 + (opts.a || 0.005));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + (opts.dur || .2));
+    o.connect(f); f.connect(g); g.connect(audio.master);
+    o.start(t0); o.stop(t0 + (opts.dur || .2) + 0.05);
+  }
+  function noise(opts) {
+    if (!audio.ctx) return;
+    var c = audio.ctx, t0 = now() + (opts.at || 0), dur = opts.dur || .3;
+    var buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+    var s = c.createBufferSource(); s.buffer = buf;
+    var f = c.createBiquadFilter(); f.type = opts.ftype || "bandpass"; f.frequency.value = opts.cut || 2000; f.Q.value = opts.q || 1;
+    var g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(opts.g || 0.08, t0 + (opts.a || 0.01));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    s.connect(f); f.connect(g); g.connect(audio.master);
+    s.start(t0); s.stop(t0 + dur + 0.05);
+  }
+  var sfx = {
+    key: function () { tone({ f: rnd(1800, 2400), type: "square", g: 0.025, dur: 0.035, cut: 4000 }); },
+    tick: function () { tone({ f: 1200, type: "square", g: 0.03, dur: 0.03 }); },
+    beep: function (i) { tone({ f: 880 + i * 60, type: "sine", g: 0.07, dur: 0.09 }); },
+    blip: function () { tone({ f: 1500, f2: 2200, type: "triangle", g: 0.05, dur: 0.08 }); },
+    ok: function () { tone({ f: 660, g: 0.08, dur: 0.12 }); tone({ f: 990, g: 0.08, dur: 0.16, at: 0.09 }); },
+    deny: function () { tone({ f: 180, f2: 120, type: "sawtooth", g: 0.12, dur: 0.35, cut: 900 }); tone({ f: 185, f2: 118, type: "square", g: 0.05, dur: 0.35, cut: 700 }); },
+    granted: function () {
+      [523, 659, 784, 1046].forEach(function (f, i) { tone({ f: f, g: 0.09, dur: 0.35, at: i * 0.09, type: "triangle" }); });
+      tone({ f: 130, g: 0.12, dur: 1.2, at: 0.1, type: "sine" });
+      noise({ cut: 6000, g: 0.03, dur: 0.6, at: 0.3, ftype: "highpass" });
+    },
+    powerUp: function () {
+      tone({ f: 40, f2: 110, type: "sawtooth", g: 0.25, dur: 2.2, a: 0.4, cut: 500 });
+      tone({ f: 220, f2: 880, type: "sine", g: 0.06, dur: 1.6, a: 0.8 });
+      noise({ cut: 900, q: 0.6, g: 0.05, dur: 2.0, a: 0.5, ftype: "lowpass" });
+    },
+    enter: function () {
+      tone({ f: 1200, f2: 300, type: "sine", g: 0.1, dur: 0.6 });
+      noise({ cut: 4000, g: 0.06, dur: 0.5, ftype: "highpass" });
+      tone({ f: 55, g: 0.2, dur: 1.4, a: 0.05, type: "sine" });
+    },
+    scramble: function () { tone({ f: rnd(2500, 4000), type: "square", g: 0.012, dur: 0.02 }); },
+    sonar: function () { tone({ f: 1046, f2: 1000, type: "sine", g: 0.035, dur: 1.4, a: 0.02 }); },
+    slip: function () { tone({ f: 70, f2: 58, type: "sawtooth", g: 0.1, dur: 0.5, cut: 300 }); noise({ cut: 1200, g: 0.04, dur: 0.15 }); }
+  };
+  function droneStart() {
+    if (!audio.ctx || audio.drone) return;
+    var c = audio.ctx, t0 = now();
+    var bus = c.createGain(); bus.gain.setValueAtTime(0.0001, t0); bus.gain.exponentialRampToValueAtTime(0.11, t0 + 4);
+    var filt = c.createBiquadFilter(); filt.type = "lowpass"; filt.frequency.value = 420; filt.Q.value = 2;
+    var lfo = c.createOscillator(); lfo.frequency.value = 0.07;
+    var lfoG = c.createGain(); lfoG.gain.value = 180;
+    lfo.connect(lfoG); lfoG.connect(filt.frequency); lfo.start();
+    [55, 55.4, 82.5, 110.3].forEach(function (f, i) {
+      var o = c.createOscillator(); o.type = i < 2 ? "sawtooth" : "triangle"; o.frequency.value = f;
+      var g = c.createGain(); g.gain.value = i < 2 ? 0.5 : 0.25;
+      o.connect(g); g.connect(filt); o.start();
+    });
+    // slow shimmer
+    var sh = c.createOscillator(); sh.type = "sine"; sh.frequency.value = 440;
+    var shG = c.createGain(); shG.gain.value = 0.0001;
+    var shL = c.createOscillator(); shL.frequency.value = 0.05; var shLG = c.createGain(); shLG.gain.value = 0.02;
+    shL.connect(shLG); shLG.connect(shG.gain); shL.start();
+    sh.connect(shG); shG.connect(bus); sh.start();
+    filt.connect(bus); bus.connect(audio.master);
+    audio.drone = bus;
+    (function pingLoop() { if (!audio.muted) sfx.sonar(); setTimeout(pingLoop, 7000 + Math.random() * 5000); })();
+  }
+  var sndBtn = document.getElementById("snd"), sndLabel = document.getElementById("snd-label");
+  function renderSnd() {
+    sndBtn.classList.toggle("off", audio.muted);
+    sndBtn.setAttribute("aria-pressed", audio.muted ? "false" : "true");
+    sndLabel.textContent = audio.muted ? "Son coupé" : "Son actif";
+  }
+  sndBtn.addEventListener("click", function () {
+    audio.muted = !audio.muted;
+    store("varenne-mute", audio.muted ? "1" : null);
+    audioInit();
+    if (audio.ctx) {
+      if (audio.ctx.state === "suspended") audio.ctx.resume();
+      audio.master.gain.setTargetAtTime(audio.muted ? 0 : 0.9, now(), 0.05);
+      if (!audio.muted) { droneStart(); sfx.blip(); }
+    }
+    renderSnd();
+  });
+  renderSnd();
+
+  /* =============== Boot sequence =============== */
   var boot = document.getElementById("boot");
   var bootLines = document.getElementById("boot-lines");
   var bootBar = document.getElementById("boot-bar");
   var bootHint = document.getElementById("boot-hint");
+  var bootPress = document.getElementById("boot-press");
+  var bootHex = document.getElementById("boot-hex");
+  var bootFlash = document.getElementById("boot-flash");
   var BOOT = [
-    ["Initialisation du terminal", "OK", 16],
-    ["Chargement du registre nominatif", "OK", 31],
+    ["Mise sous tension du terminal", "OK", 10],
+    ["Chargement du noyau de consultation", "OK", 24],
+    ["Chargement du registre nominatif", "OK", 36],
     ["Liaison archives 1987 — Grand Hôtel des Champs", "ÉTABLIE", 52],
-    ["Contrôle d’intégrité des archives froides", "98 %", 71, "warn"],
-    ["Capteurs de section neurologique", "ACTIFS", 88],
+    ["Contrôle d’intégrité des archives froides", "98 %", 66, "warn"],
+    ["Capteurs de section neurologique", "32 ACTIFS", 80],
+    ["Synchronisation de l’horloge", "OK", 92],
     ["Terminal prêt", "", 100]
   ];
-  var bootDone = false;
+  var bootState = "wait";
+  function hexLine(n) {
+    var s = "";
+    for (var i = 0; i < n; i++) {
+      var b = Math.floor(Math.random() * 256).toString(16).toUpperCase();
+      s += (b.length < 2 ? "0" + b : b) + " ";
+    }
+    return s;
+  }
   function endBoot() {
-    if (bootDone) return;
-    bootDone = true;
+    if (bootState === "done") return;
+    bootState = "done";
     store("varenne-boot", "1");
+    if (!reduced) { bootFlash.classList.add("go"); if (audio.ctx && !audio.muted) sfx.enter(); }
     boot.classList.add("out");
-    setTimeout(function () { boot.hidden = true; }, reduced ? 0 : 650);
+    setTimeout(function () { boot.hidden = true; }, reduced ? 0 : 750);
   }
   function runBoot() {
     var i = 0;
+    bootPress.classList.add("on");
+    bootPress.textContent = "Initialisation en cours";
+    if (!audio.muted) { droneStart(); sfx.powerUp(); }
+    var hexTimer = setInterval(function () { bootHex.innerHTML = "<b>0x" + (0x3A00 + i * 0x40).toString(16).toUpperCase() + "</b>  " + hexLine(22); }, 90);
     function next() {
-      if (i >= BOOT.length) { bootHint.textContent = "Accès au terminal"; setTimeout(endBoot, 500); return; }
+      if (i >= BOOT.length) {
+        clearInterval(hexTimer);
+        bootHint.textContent = "Accès au terminal";
+        setTimeout(endBoot, 600);
+        return;
+      }
       var item = BOOT[i++];
       var row = document.createElement("div");
       var k = document.createElement("span"); k.className = "k"; k.textContent = item[0];
@@ -444,19 +588,31 @@
       bootLines.appendChild(row);
       bootBar.style.width = item[2] + "%";
       bootHint.textContent = item[2] + " %";
-      setTimeout(next, 260 + Math.random() * 320);
+      if (!audio.muted) sfx.beep(i);
+      setTimeout(next, 220 + Math.random() * 300);
     }
-    next();
+    setTimeout(next, 500);
   }
-  boot.addEventListener("click", endBoot);
-  if (store("varenne-boot") === "1" || reduced) {
-    boot.hidden = true; bootDone = true;
-  } else {
+  function startBoot() {
+    if (bootState !== "wait") { if (bootState === "run") endBoot(); return; }
+    bootState = "run";
+    audioInit();
+    if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
     runBoot();
-    setTimeout(endBoot, 6000);
+    setTimeout(endBoot, 7000);
+  }
+  boot.addEventListener("click", startBoot);
+  document.addEventListener("keydown", function (e) { if (bootState === "wait" && (e.key === "Enter" || e.key === " ")) startBoot(); });
+  if (store("varenne-boot") === "1" || reduced) {
+    boot.hidden = true; bootState = "done";
+    // audio can only start after a gesture: first click anywhere starts the ambience
+    document.addEventListener("pointerdown", function once() {
+      document.removeEventListener("pointerdown", once);
+      audioInit(); if (audio.ctx && !audio.muted) droneStart();
+    });
   }
 
-  /* ---------- Clock with a brief slip back to 1987 ---------- */
+  /* =============== Clock with a brief slip back to 1987 =============== */
   var clockEl = document.getElementById("clock");
   var instituteEl = document.getElementById("institute");
   function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -468,15 +624,38 @@
   tick(); setInterval(tick, 1000);
   function slip() {
     if (reduced) return;
+    if (!boot.hidden) { setTimeout(slip, 4000); return; }
     clockEl.classList.add("past");
     clockEl.textContent = "31.10.1987 — 20:00:00";
     instituteEl.classList.add("glitch");
-    setTimeout(function () { clockEl.classList.remove("past"); instituteEl.classList.remove("glitch"); tick(); }, 140);
-    setTimeout(slip, 14000 + Math.random() * 16000);
+    if (audio.ctx && !audio.muted) sfx.slip();
+    setTimeout(function () { clockEl.classList.remove("past"); instituteEl.classList.remove("glitch"); tick(); }, 160);
+    setTimeout(slip, 16000 + Math.random() * 18000);
   }
-  setTimeout(slip, 9000);
+  setTimeout(slip, 12000);
 
-  /* ---------- EEG trace ---------- */
+  /* =============== Telemetry + hex stream =============== */
+  var tTemp = document.getElementById("t-temp"), gTemp = document.getElementById("g-temp");
+  var tRate = document.getElementById("t-rate"), gRate = document.getElementById("g-rate");
+  var hexEl = document.getElementById("hex");
+  var temp = -80.0, rate = 1.2;
+  setInterval(function () {
+    temp += rnd(-0.12, 0.12); if (temp < -80.6) temp = -80.6; if (temp > -79.4) temp = -79.4;
+    rate += rnd(-0.25, 0.25); if (rate < 0.4) rate = 0.4; if (rate > 2.6) rate = 2.6;
+    tTemp.textContent = "−" + Math.abs(temp).toFixed(1) + " °C";
+    gTemp.style.width = (60 + (temp + 80) * 40) + "%";
+    tRate.textContent = rate.toFixed(2) + " Mo/s";
+    gRate.style.width = (rate / 2.6 * 100) + "%";
+  }, 900);
+  var hexAddr = 0x4D04;
+  function hexTick() {
+    if (reduced) { hexEl.innerHTML = "<b>0x4D04</b>  " + hexLine(26); return; }
+    hexAddr += 0x10;
+    hexEl.innerHTML = "<b>0x" + hexAddr.toString(16).toUpperCase() + "</b>  " + hexLine(30) + "  <b>M-04</b>";
+  }
+  hexTick(); if (!reduced) setInterval(hexTick, 140);
+
+  /* =============== EEG trace =============== */
   var canvas = document.getElementById("eeg");
   var ctx = canvas.getContext && canvas.getContext("2d");
   var eegX = 0, eegPhase = 0;
@@ -499,7 +678,7 @@
     if (!ctx) return;
     var r = canvas.getBoundingClientRect(), w = r.width, h = r.height;
     if (!w) { requestAnimationFrame(drawEEG); return; }
-    ctx.fillStyle = "rgba(9,16,22,0.9)";
+    ctx.fillStyle = "rgba(8,14,20,0.9)";
     ctx.fillRect(eegX, 0, 14, h);
     ctx.strokeStyle = "#7fe3ff";
     ctx.shadowColor = "rgba(127,227,255,.6)";
@@ -525,7 +704,19 @@
   window.addEventListener("resize", function () { sizeCanvas(); if (reduced) drawStaticEEG(); });
   if (reduced) drawStaticEEG(); else requestAnimationFrame(drawEEG);
 
-  /* ---------- Views ---------- */
+  /* =============== Views =============== */
+  var views = {
+    login: document.getElementById("view-login"),
+    record: document.getElementById("view-record"),
+    anomaly: document.getElementById("view-anomaly")
+  };
+  var form = document.getElementById("login-form");
+  var identEl = document.getElementById("ident");
+  var codeEl = document.getElementById("code");
+  var statusEl = document.getElementById("login-status");
+  var stepsEl = document.getElementById("steps");
+  var btnLogin = document.getElementById("btn-login");
+
   function show(name) {
     Object.keys(views).forEach(function (k) { views[k].hidden = (k !== name); });
     if (!reduced) {
@@ -550,6 +741,7 @@
         out += (i < settled || c === " " || c === "/" || c === "-" || c === "’") ? c : SCRAMBLE[Math.floor(Math.random() * SCRAMBLE.length)];
       }
       el.textContent = out; frames++;
+      if (audio.ctx && !audio.muted && frames % 3 === 0) sfx.scramble();
       setTimeout(step, 38);
     }, delay);
   }
@@ -571,34 +763,39 @@
     show("login");
   }
 
-  /* ---------- Authentication steps ---------- */
+  /* =============== Authentication =============== */
+  [identEl, codeEl].forEach(function (el) {
+    el.addEventListener("keydown", function (e) { if (e.key.length === 1 || e.key === "Backspace") { audioInit(); if (audio.ctx && !audio.muted) sfx.key(); } });
+  });
   function addStep(label) {
     var row = document.createElement("div"); row.className = "step run";
     var k = document.createElement("span"); k.className = "k"; k.textContent = label;
     var v = document.createElement("span"); v.className = "v"; v.textContent = "";
     row.appendChild(k); row.appendChild(v); stepsEl.appendChild(row);
+    if (audio.ctx && !audio.muted) sfx.tick();
     return row;
   }
   function settle(row, ok, text) {
     row.className = "step " + (ok ? "ok" : "ko");
     row.querySelector(".v").textContent = text;
+    if (audio.ctx && !audio.muted) { if (ok) sfx.blip(); else sfx.deny(); }
   }
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     if (btnLogin.disabled) return;
+    audioInit();
+    if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
+    if (audio.ctx && !audio.muted) droneStart();
     var okIdent = loose(identEl.value) === loose(IDENT);
     var okCode = loose(codeEl.value) === loose(CODE);
     var empty = !identEl.value.trim() || !codeEl.value.trim();
     statusEl.textContent = "";
     stepsEl.innerHTML = "";
     btnLogin.disabled = true;
-    var t = reduced ? 30 : 520;
+    var t = reduced ? 30 : 560;
 
-    function fail(msg) {
-      statusEl.textContent = msg;
-      btnLogin.disabled = false;
-    }
+    function fail(msg) { statusEl.textContent = msg; btnLogin.disabled = false; }
 
     var s1 = addStep("Lecture des références de la carte");
     setTimeout(function () {
@@ -615,12 +812,13 @@
           var s4 = addStep("Ouverture des archives froides");
           setTimeout(function () {
             settle(s4, true, "M-04");
+            if (audio.ctx && !audio.muted) sfx.granted();
             setTimeout(function () {
               btnLogin.disabled = false;
               store("varenne", "1");
               identEl.value = ""; codeEl.value = ""; stepsEl.innerHTML = "";
               show("record");
-            }, reduced ? 0 : 400);
+            }, reduced ? 0 : 500);
           }, t);
         }, t);
       }, t);
@@ -629,6 +827,7 @@
 
   document.getElementById("btn-logout").addEventListener("click", function () {
     store("varenne", null);
+    if (audio.ctx && !audio.muted) sfx.blip();
     show("login");
     identEl.focus();
   });
