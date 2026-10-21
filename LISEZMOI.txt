@@ -26,3 +26,7 @@ HÉBERGEMENT GRATUIT (si vous voulez une autre adresse que celle de claude.ai)
   GitHub Pages : créez un dépôt public, déposez index.html à la racine,
      puis Settings > Pages > Branch main. Adresse : https://<compte>.github.io/<dépôt>/
   Cloudflare Pages : https://pages.cloudflare.com (glisser-déposer également).
+
+DOCUMENTS NUMERIQUES (photos + video de la procedure C-314)
+  Voir media/A_LIRE.txt : noms de fichiers attendus et prompts pour les generer par IA.
+  Sans fichiers, le site lit une "copie degradee" dessinee par le navigateur (scie + cris synthetises).

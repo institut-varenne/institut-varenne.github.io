@@ -272,6 +272,45 @@
   .boot .flash.go { animation: flash .5s ease-out 1; }
   @keyframes flash { 0% { opacity: .35; } 100% { opacity: 0; } }
 
+  /* Documents numériques */
+  .docs { margin-top: 28px; }
+  .docs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .doc {
+    position: relative; border: 1px solid var(--line-strong); background: var(--bg-inset); aspect-ratio: 4 / 3; overflow: hidden;
+    cursor: pointer; padding: 0; text-align: left; color: var(--fg); box-shadow: none; max-width: 100%; min-width: 0; width: 100%;
+    letter-spacing: 0; text-transform: none; font-weight: 400;
+  }
+  .doc:hover { box-shadow: 0 0 22px rgba(127,227,255,.22); background: var(--bg-inset); }
+  .doc:hover .thumb { filter: saturate(.7) contrast(1.15) brightness(1.1); }
+  .doc .thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.5) contrast(1.1) brightness(.85); transition: filter .2s; }
+  .doc .tag {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 10px 8px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    background: linear-gradient(transparent, rgba(4,7,10,.92)); color: var(--fg-muted); line-height: 1.4;
+  }
+  .doc .tag b { color: var(--ice); font-weight: 500; display: block; }
+  .doc.video { grid-column: 1 / -1; aspect-ratio: 16 / 7; }
+  .doc .play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .doc .play i { width: 54px; height: 54px; border: 1px solid var(--ice); display: flex; align-items: center; justify-content: center; background: rgba(4,7,10,.6); box-shadow: 0 0 24px var(--ice-glow); }
+  .doc .play i::after { content: ""; border-left: 14px solid var(--ice); border-top: 9px solid transparent; border-bottom: 9px solid transparent; margin-left: 4px; }
+  .doc .rec { position: absolute; top: 8px; left: 10px; font-size: 10px; letter-spacing: .16em; color: #e06060; display: flex; gap: 6px; align-items: center; text-transform: uppercase; }
+  .doc .rec::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #e06060; animation: pulse 1s steps(2, start) infinite; }
+  .doc .stamp { position: absolute; top: 8px; right: 10px; font-size: 10px; letter-spacing: .12em; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+  .docs .note { margin-top: 10px; font-size: 11px; color: var(--fg-dim); max-width: 70ch; }
+  /* Visionneuse */
+  .lb {
+    position: fixed; inset: 0; z-index: 60; background: rgba(2, 4, 6, .95);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .lb .frame { position: relative; max-width: min(960px, 100%); border: 1px solid var(--line-strong); box-shadow: 0 0 70px rgba(31,143,176,.22); background: #000; line-height: 0; }
+  .lb .frame img, .lb .frame video, .lb .frame canvas { display: block; max-width: 100%; max-height: 72vh; width: auto; height: auto; }
+  .lb .frame canvas { width: min(960px, 100%); aspect-ratio: 16 / 9; max-height: 72vh; }
+  .lb .cap { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--fg-muted); text-align: center; max-width: 70ch; line-height: 1.6; }
+  .lb .cap b { color: var(--ice); font-weight: 500; }
+  .lb .cap .warn { color: var(--alarm); }
+  .lb .bar-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .lb .frame .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4,7,10,.55); }
+
   .foot { position: relative; z-index: 1; margin-top: 16px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-dim); text-align: center; }
   .reveal { animation: reveal .5s ease-out; }
   @keyframes reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -291,6 +330,8 @@
     dt { border-bottom: 0; padding-bottom: 0; }
     dd { padding-top: 2px; }
     .institute { font-size: 21px; }
+    .docs-grid { grid-template-columns: 1fr 1fr; }
+    .doc.video { aspect-ratio: 16 / 9; }
   }
 </style>
 </head>
@@ -381,6 +422,32 @@
     </dl>
     <p class="para">Le prélèvement C-314 et le support contenant le dernier souvenir sont conservés séparément.</p>
     <p class="para muted">Consultation actuelle : copie numérique issue des archives originales de 1987. Le support informatique de lecture est postérieur au prélèvement.</p>
+
+    <div class="docs">
+      <p class="eyebrow">Documents numériques · Procédure C-314</p>
+      <div class="docs-grid" id="docs-grid">
+        <button type="button" class="doc" data-kind="img" data-src="media/trepanation-1.jpg" data-cap="Cliché 1 / 3 — Préparation du sujet — 31.10.1987 · 23:41">
+          <span class="stamp">31.10.1987 · 23:41</span>
+          <span class="tag"><b>Cliché 1 / 3</b>Préparation du sujet</span>
+        </button>
+        <button type="button" class="doc" data-kind="img" data-src="media/trepanation-2.jpg" data-cap="Cliché 2 / 3 — Trépanation — 31.10.1987 · 23:47">
+          <span class="stamp">31.10.1987 · 23:47</span>
+          <span class="tag"><b>Cliché 2 / 3</b>Trépanation</span>
+        </button>
+        <button type="button" class="doc" data-kind="img" data-src="media/trepanation-3.jpg" data-cap="Cliché 3 / 3 — Prélèvement C-314 — 31.10.1987 · 23:58">
+          <span class="stamp">31.10.1987 · 23:58</span>
+          <span class="tag"><b>Cliché 3 / 3</b>Prélèvement C-314</span>
+        </button>
+        <button type="button" class="doc video" data-kind="video" data-src="media/extraction-314.mp4" data-cap="Enregistrement — Caméra 02 — Séance d’extraction — 31.10.1987 · 23:52">
+          <span class="rec">REC · CAM 02</span>
+          <span class="stamp">31.10.1987 · 23:52</span>
+          <span class="play"><i></i></span>
+          <span class="tag"><b>Enregistrement vidéo</b>Séance d’extraction — caméra 02</span>
+        </button>
+      </div>
+      <p class="note">Supports restaurés à partir des archives originales. Lorsqu’un support original est illisible, le terminal lit la copie dégradée.</p>
+    </div>
+
     <div class="record-actions">
       <button type="button" class="ghost" id="btn-logout">Fermer la session</button>
     </div>
@@ -825,7 +892,294 @@
     }, t);
   });
 
+  /* =============== Documents numériques =============== */
+  var mediaOK = {};   // src -> true/false once probed
+  var noiseCanvas = null;
+  function noisePattern(g) {
+    if (!noiseCanvas) {
+      noiseCanvas = document.createElement("canvas"); noiseCanvas.width = 256; noiseCanvas.height = 256;
+      var nc = noiseCanvas.getContext("2d"), id = nc.createImageData(256, 256), d = id.data;
+      for (var i = 0; i < d.length; i += 4) { var v = Math.floor(Math.random() * 255); d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+      nc.putImageData(id, 0, 0);
+    }
+    return g.createPattern(noiseCanvas, "repeat");
+  }
+
+  // Procedural "degraded archive" renderer: draws a strapped silhouette, a swinging lamp and a saw on a canvas.
+  function drawScene(c2, w, h, t, opts) {
+    // t in seconds; opts.still = static thumbnail; opts.phase overrides
+    var g = c2;
+    g.save();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = "#06080a"; g.fillRect(0, 0, w, h);
+    var sx = w / 640, sy = h / 360;
+    g.scale(sx, sy);
+    // lamp cone, swinging
+    var swing = opts.still ? 0 : Math.sin(t * 1.3) * 18;
+    var lx = 320 + swing, ly = -20;
+    var cone = g.createRadialGradient(lx, 150, 10, lx, 150, 260);
+    cone.addColorStop(0, "rgba(190,205,210,0.34)");
+    cone.addColorStop(0.5, "rgba(120,140,150,0.12)");
+    cone.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = cone;
+    g.beginPath(); g.moveTo(lx, ly); g.lineTo(lx - 300, 380); g.lineTo(lx + 300, 380); g.closePath(); g.fill();
+    // floor line
+    g.strokeStyle = "rgba(255,255,255,0.08)"; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(0, 318); g.lineTo(640, 318); g.stroke();
+    // tiles
+    for (var i = 0; i < 9; i++) { g.beginPath(); g.moveTo(80 + i * 60, 318); g.lineTo(-40 + i * 90, 360); g.stroke(); }
+    // chair + strapped figure (silhouette)
+    var thrash = opts.thrash ? (Math.random() - 0.5) * 7 : 0;
+    var breathe = opts.still ? 0 : Math.sin(t * 2.4) * 1.5;
+    g.fillStyle = "#07090b";
+    g.fillRect(262, 200, 116, 14);                 // seat
+    g.fillRect(268, 214, 10, 100); g.fillRect(362, 214, 10, 100);  // legs
+    g.fillRect(272, 110, 96, 96);                  // back
+    // body
+    g.fillStyle = "#0a0d10";
+    g.fillRect(284 + thrash * .3, 150 + breathe, 72, 70);          // torso
+    g.fillRect(250 + thrash * .4, 165, 36, 14); g.fillRect(354 + thrash * .4, 165, 36, 14); // arms on armrests
+    g.beginPath(); g.ellipse(320 + thrash, 122 + breathe, 24, 28, 0, 0, Math.PI * 2); g.fill(); // head
+    // straps
+    g.strokeStyle = "rgba(150,140,120,0.55)"; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(286, 176); g.lineTo(354, 176); g.stroke();
+    g.beginPath(); g.moveTo(296, 104 + breathe + thrash * .2); g.lineTo(344, 104 + breathe + thrash * .2); g.stroke(); // head strap
+    g.beginPath(); g.moveTo(252, 172); g.lineTo(286, 172); g.moveTo(354, 172); g.lineTo(388, 172); g.stroke();
+    // doctor silhouette + saw
+    if (opts.doctor > 0) {
+      var dx = 640 - opts.doctor * 220;  // 0..1 approach
+      g.fillStyle = "#050607";
+      g.fillRect(dx + 20, 120, 54, 200);
+      g.beginPath(); g.ellipse(dx + 47, 102, 20, 24, 0, 0, Math.PI * 2); g.fill();
+      g.fillRect(dx - 40, 150, 70, 10); // arm
+      // saw disc
+      var sawX = dx - 46, sawY = 150 + (opts.cutting ? Math.sin(t * 40) * 1.5 : 0);
+      g.save(); g.translate(sawX, sawY); g.rotate(t * (opts.sawOn ? 50 : 0));
+      g.strokeStyle = "rgba(200,205,210,0.8)"; g.lineWidth = 2;
+      g.beginPath(); g.arc(0, 0, 18, 0, Math.PI * 2); g.stroke();
+      for (var k = 0; k < 10; k++) { var a = k / 10 * Math.PI * 2; g.beginPath(); g.moveTo(Math.cos(a) * 12, Math.sin(a) * 12); g.lineTo(Math.cos(a) * 20, Math.sin(a) * 20); g.stroke(); }
+      g.restore();
+      if (opts.cutting) {
+        // sparks / spray
+        for (var s = 0; s < 14; s++) {
+          g.fillStyle = Math.random() < .5 ? "rgba(230,230,230,0.8)" : "rgba(150,30,30,0.9)";
+          g.fillRect(sawX + (Math.random() - .5) * 60, sawY + (Math.random() - .2) * 50, 2, 2);
+        }
+        g.fillStyle = "rgba(120,15,15,0.55)";
+        g.fillRect(300, 150, 40 + Math.random() * 10, 60 + Math.random() * 20);
+      }
+    }
+    g.restore();
+    // grain + scanlines + vignette
+    var grain = opts.grain || 0.18;
+    g.save();
+    g.globalAlpha = Math.min(1, grain * 1.6);
+    g.globalCompositeOperation = "overlay";
+    g.translate(-Math.floor(Math.random() * 256), -Math.floor(Math.random() * 256));
+    g.fillStyle = noisePattern(g);
+    g.fillRect(0, 0, w + 256, h + 256);
+    g.restore();
+    g.fillStyle = "rgba(0,0,0,0.25)";
+    for (var y = 0; y < h; y += 3) g.fillRect(0, y, w, 1);
+    var vg = g.createRadialGradient(w / 2, h / 2, h * .3, w / 2, h / 2, h * .85);
+    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,0.85)");
+    g.fillStyle = vg; g.fillRect(0, 0, w, h);
+    // tear
+    if (opts.tear && Math.random() < .35) {
+      var ty = Math.random() * h, th = 6 + Math.random() * 30, off = (Math.random() - .5) * 60;
+      var strip = g.getImageData(0, ty, w, th); g.putImageData(strip, off, ty);
+    }
+    // HUD
+    g.fillStyle = "rgba(220,230,235,0.85)";
+    g.font = Math.round(12 * sx) + "px IBM Plex Mono, monospace";
+    g.textBaseline = "top";
+    g.fillText("CAM 02", 14 * sx, 12 * sy);
+    g.fillStyle = "#e05050"; g.beginPath(); g.arc(78 * sx, 19 * sy, 4 * sx, 0, Math.PI * 2); if (Math.floor(t * 2) % 2 === 0 || opts.still) g.fill();
+    g.fillStyle = "rgba(220,230,235,0.85)";
+    var sec = 52 * 60 + Math.floor(t), mm = 52 + Math.floor(t / 60), ss = Math.floor(t) % 60;
+    g.textAlign = "right";
+    g.fillText("31.10.1987  23:" + (mm < 10 ? "0" + mm : mm) + ":" + (ss < 10 ? "0" + ss : ss), w - 14 * sx, 12 * sy);
+    g.textAlign = "left";
+    if (opts.caption) {
+      g.fillStyle = "rgba(220,230,235,0.75)";
+      g.fillText(opts.caption, 14 * sx, h - 22 * sy);
+    }
+    if (opts.lost) {
+      g.fillStyle = "rgba(0,0,0,0.75)"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "#d9e6ee"; g.textAlign = "center"; g.font = Math.round(16 * sx) + "px IBM Plex Mono, monospace";
+      g.fillText("SIGNAL PERDU — FIN DE LA COPIE", w / 2, h / 2 - 8 * sy);
+      g.textAlign = "left";
+    }
+  }
+
+  function thumbCanvas(kind, idx) {
+    var cv = document.createElement("canvas"); cv.className = "thumb";
+    cv.width = 320; cv.height = kind === "video" ? 140 : 240;
+    var opts = { still: true, grain: 0.22, doctor: 0, caption: "" };
+    if (kind === "video") { opts.doctor = 0.6; opts.sawOn = false; }
+    else if (idx === 1) { opts.doctor = 0.9; opts.sawOn = false; }
+    else if (idx === 2) { opts.doctor = 1; opts.cutting = true; opts.sawOn = true; }
+    drawScene(cv.getContext("2d"), cv.width, cv.height, 3, opts);
+    return cv;
+  }
+
+  // Thumbnails: try the real file, fall back to the procedural still.
+  var docButtons = document.querySelectorAll("#docs-grid .doc");
+  Array.prototype.forEach.call(docButtons, function (btn, idx) {
+    var kind = btn.getAttribute("data-kind"), src = btn.getAttribute("data-src");
+    function fallback() { mediaOK[src] = false; btn.insertBefore(thumbCanvas(kind, idx), btn.firstChild); }
+    if (kind === "img") {
+      var im = new Image(); im.className = "thumb"; im.alt = "";
+      im.onload = function () { mediaOK[src] = true; btn.insertBefore(im, btn.firstChild); };
+      im.onerror = fallback;
+      im.src = src;
+    } else {
+      var v = document.createElement("video"); v.className = "thumb"; v.muted = true; v.preload = "metadata"; v.playsInline = true;
+      v.onloadeddata = function () { mediaOK[src] = true; try { v.currentTime = 1; } catch (e) {} btn.insertBefore(v, btn.firstChild); };
+      v.onerror = fallback;
+      v.src = src;
+    }
+    btn.addEventListener("click", function () { openDoc(kind, src, btn.getAttribute("data-cap"), idx); });
+  });
+
+  // Saw + scream synthesis for the degraded clip
+  var clipAudio = null;
+  function clipAudioStart() {
+    audioInit(); if (!audio.ctx || audio.muted) return null;
+    var c = audio.ctx, t0 = now();
+    var bus = c.createGain(); bus.gain.value = 0.0001; bus.connect(audio.master);
+    // saw motor
+    var m1 = c.createOscillator(), m2 = c.createOscillator(); m1.type = "sawtooth"; m2.type = "square";
+    m1.frequency.value = 95; m2.frequency.value = 190;
+    var wob = c.createOscillator(); wob.frequency.value = 7; var wobG = c.createGain(); wobG.gain.value = 6; wob.connect(wobG); wobG.connect(m1.frequency); wob.start();
+    var mf = c.createBiquadFilter(); mf.type = "bandpass"; mf.frequency.value = 1400; mf.Q.value = 0.8;
+    var mg = c.createGain(); mg.gain.value = 0.0001;
+    m1.connect(mf); m2.connect(mf); mf.connect(mg); mg.connect(bus);
+    var hiss = c.createBufferSource(); var hb = c.createBuffer(1, c.sampleRate * 2, c.sampleRate); var hd = hb.getChannelData(0);
+    for (var i = 0; i < hd.length; i++) hd[i] = Math.random() * 2 - 1;
+    hiss.buffer = hb; hiss.loop = true; var hf = c.createBiquadFilter(); hf.type = "bandpass"; hf.frequency.value = 3800; hf.Q.value = 1.5;
+    var hg = c.createGain(); hg.gain.value = 0.0001; hiss.connect(hf); hf.connect(hg); hg.connect(mg);
+    m1.start(); m2.start(); hiss.start();
+    // scream voice
+    var sv = c.createOscillator(); sv.type = "sawtooth"; sv.frequency.value = 620;
+    var vib = c.createOscillator(); vib.frequency.value = 6.5; var vibG = c.createGain(); vibG.gain.value = 45; vib.connect(vibG); vibG.connect(sv.frequency); vib.start();
+    var ws = c.createWaveShaper(); var curve = new Float32Array(256); for (var j = 0; j < 256; j++) { var x = j / 128 - 1; curve[j] = Math.tanh(x * 4); } ws.curve = curve;
+    var f1 = c.createBiquadFilter(); f1.type = "bandpass"; f1.frequency.value = 1100; f1.Q.value = 2.5;
+    var f2 = c.createBiquadFilter(); f2.type = "bandpass"; f2.frequency.value = 2600; f2.Q.value = 3;
+    var sg = c.createGain(); sg.gain.value = 0.0001;
+    sv.connect(ws); ws.connect(f1); ws.connect(f2); f1.connect(sg); f2.connect(sg); sg.connect(bus);
+    sv.start();
+    bus.gain.exponentialRampToValueAtTime(0.5, t0 + 0.5);
+    return {
+      saw: function (on, cutting) {
+        var t = now();
+        mg.gain.cancelScheduledValues(t); mg.gain.setTargetAtTime(on ? (cutting ? 0.45 : 0.3) : 0.0001, t, 0.15);
+        hg.gain.setTargetAtTime(cutting ? 0.5 : 0.0001, t, 0.1);
+        m1.frequency.setTargetAtTime(cutting ? 72 : 95, t, 0.2); m2.frequency.setTargetAtTime(cutting ? 144 : 190, t, 0.2);
+      },
+      scream: function () {
+        var t = now();
+        sv.frequency.cancelScheduledValues(t);
+        sv.frequency.setValueAtTime(520 + Math.random() * 120, t);
+        sv.frequency.exponentialRampToValueAtTime(820 + Math.random() * 120, t + 0.25);
+        sv.frequency.exponentialRampToValueAtTime(560, t + 1.3);
+        sg.gain.cancelScheduledValues(t);
+        sg.gain.setValueAtTime(0.0001, t);
+        sg.gain.exponentialRampToValueAtTime(0.42, t + 0.08);
+        sg.gain.setValueAtTime(0.42, t + 0.9);
+        sg.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+      },
+      stop: function () {
+        var t = now();
+        bus.gain.cancelScheduledValues(t); bus.gain.setTargetAtTime(0.0001, t, 0.2);
+        setTimeout(function () { try { m1.stop(); m2.stop(); hiss.stop(); sv.stop(); wob.stop(); vib.stop(); } catch (e) {} bus.disconnect(); }, 800);
+      }
+    };
+  }
+
+  var lb = null, clipRAF = null;
+  function closeDoc() {
+    if (clipRAF) { cancelAnimationFrame(clipRAF); clipRAF = null; }
+    if (clipAudio) { clipAudio.stop(); clipAudio = null; }
+    if (lb) { lb.remove(); lb = null; }
+    document.removeEventListener("keydown", escClose);
+  }
+  function escClose(e) { if (e.key === "Escape") closeDoc(); }
+
+  function openDoc(kind, src, cap, idx) {
+    closeDoc();
+    audioInit(); if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
+    if (audio.ctx && !audio.muted) sfx.blip();
+    lb = document.createElement("div"); lb.className = "lb";
+    var frame = document.createElement("div"); frame.className = "frame";
+    var capEl = document.createElement("div"); capEl.className = "cap";
+    var actions = document.createElement("div"); actions.className = "bar-actions";
+    var closeBtn = document.createElement("button"); closeBtn.type = "button"; closeBtn.className = "ghost"; closeBtn.textContent = "Fermer le document";
+    closeBtn.addEventListener("click", closeDoc);
+    actions.appendChild(closeBtn);
+    lb.appendChild(frame); lb.appendChild(capEl); lb.appendChild(actions);
+    document.body.appendChild(lb);
+    document.addEventListener("keydown", escClose);
+    lb.addEventListener("click", function (e) { if (e.target === lb) closeDoc(); });
+
+    var real = mediaOK[src] === true;
+    if (kind === "img") {
+      if (real) {
+        var im = document.createElement("img"); im.src = src; im.alt = cap; frame.appendChild(im);
+        capEl.innerHTML = "<b>" + cap + "</b>Support original restauré";
+      } else {
+        var cv = document.createElement("canvas"); cv.width = 960; cv.height = 540; frame.appendChild(cv);
+        var o = { still: true, grain: 0.2, doctor: idx === 0 ? 0 : (idx === 1 ? 0.9 : 1), sawOn: idx === 2, cutting: idx === 2 };
+        drawScene(cv.getContext("2d"), cv.width, cv.height, 3, o);
+        capEl.innerHTML = "<b>" + cap + "</b><span class=\"warn\">Support original illisible — copie dégradée</span>";
+      }
+      return;
+    }
+    // video
+    if (real) {
+      var v = document.createElement("video"); v.src = src; v.controls = true; v.autoplay = true; v.playsInline = true; frame.appendChild(v);
+      capEl.innerHTML = "<b>" + cap + "</b>Support original restauré";
+      v.play && v.play().catch(function () {});
+      return;
+    }
+    var cvv = document.createElement("canvas"); cvv.width = 960; cvv.height = 540; frame.appendChild(cvv);
+    capEl.innerHTML = "<b>" + cap + "</b><span class=\"warn\">Support original illisible — lecture de la copie dégradée</span>";
+    var overlay = document.createElement("div"); overlay.className = "overlay";
+    var playBtn = document.createElement("button"); playBtn.type = "button"; playBtn.textContent = "Lire la copie dégradée";
+    overlay.appendChild(playBtn); frame.appendChild(overlay);
+    drawScene(cvv.getContext("2d"), cvv.width, cvv.height, 0, { still: true, grain: 0.2, doctor: 0 });
+    playBtn.addEventListener("click", function () {
+      overlay.remove();
+      playClip(cvv);
+    });
+  }
+
+  function playClip(cv) {
+    var g = cv.getContext("2d");
+    var start = performance.now();
+    clipAudio = clipAudioStart();
+    var lastScream = -10, sawState = -1, DUR = 19;
+    function frame(nowMs) {
+      var t = (nowMs - start) / 1000;
+      var o = { grain: 0.16, doctor: 0, caption: "" };
+      if (t < 4) { o.doctor = 0; o.caption = "SUJET 314 — IMMOBILISÉ"; }
+      else if (t < 8) { o.doctor = Math.min(1, (t - 4) / 3.2); o.sawOn = t > 5.5; o.caption = "PRÉPARATION — SCIE EN ROTATION"; }
+      else if (t < 15) { o.doctor = 1; o.sawOn = true; o.cutting = true; o.thrash = true; o.tear = t > 9; o.grain = 0.22 + Math.random() * .1; o.caption = "TRÉPANATION EN COURS"; }
+      else if (t < 17) { o.doctor = 1; o.sawOn = false; o.grain = 0.5; o.tear = true; o.caption = ""; }
+      else { o.lost = true; o.grain = 0.6; }
+      // audio cues
+      var sawKey = o.cutting ? 2 : (o.sawOn ? 1 : 0);
+      if (clipAudio && sawKey !== sawState) { clipAudio.saw(sawKey > 0, sawKey === 2); sawState = sawKey; }
+      if (clipAudio && o.cutting && t - lastScream > 1.6 + Math.random() * 0.6) { clipAudio.scream(); lastScream = t; }
+      drawScene(g, cv.width, cv.height, t, o);
+      if (t < DUR) clipRAF = requestAnimationFrame(frame);
+      else { clipRAF = null; if (clipAudio) { clipAudio.stop(); clipAudio = null; } }
+    }
+    clipRAF = requestAnimationFrame(frame);
+  }
+
   document.getElementById("btn-logout").addEventListener("click", function () {
+    closeDoc();
     store("varenne", null);
     if (audio.ctx && !audio.muted) sfx.blip();
     show("login");
