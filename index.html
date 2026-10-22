@@ -854,7 +854,9 @@
     if (audio.ctx && !audio.muted) droneStart();
     // Identifiant accepté dès que "VARENNE" apparaît (V.VARENNE, VARENNE, V VARENNE, DR V VARENNE…), accents ignorés
     var okIdent = norm(identEl.value).normalize("NFD").replace(/[̀-ͯ]/g, "").indexOf("VARENNE") !== -1;
-    var okCode = loose(codeEl.value) === loose(CODE);
+    // Matricule accepté s'il contient RV puis 6419, quels que soient les séparateurs (RV-6419, rv 6419, RV6419, "matricule rv : 6419"…)
+    var codeN = (codeEl.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    var okCode = /RV.*6419/.test(codeN);
     var empty = !identEl.value.trim() || !codeEl.value.trim();
     statusEl.textContent = "";
     stepsEl.innerHTML = "";
