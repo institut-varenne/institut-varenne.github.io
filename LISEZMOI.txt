@@ -30,3 +30,9 @@ HÉBERGEMENT GRATUIT (si vous voulez une autre adresse que celle de claude.ai)
 DOCUMENTS NUMERIQUES (photos + video de la procedure C-314)
   Voir media/A_LIRE.txt : noms de fichiers attendus et prompts pour les generer par IA.
   Sans fichiers, le site lit une "copie degradee" dessinee par le navigateur (scie + cris synthetises).
+
+AIDE AUTOMATIQUE
+  7 minutes apres la connexion, la ligne "Reserve froide de l'annexe medicale" clignote en orange
+  et un double bip retentit toutes les 2,4 s, de plus en plus fort (meme si le son du site est coupe).
+  Un clic sur la ligne arrete le bip ; "Fermer la session" remet tout a zero.
+  Pour tester sans attendre : https://institut-varenne.github.io/?hint=20  (delai de 20 secondes)

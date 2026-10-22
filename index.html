@@ -237,6 +237,10 @@
   dd.scrambling { color: var(--fg-dim); }
   .row-in dt, .row-in dd { animation: rowIn .4s ease-out both; animation-delay: inherit; }
   @keyframes rowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+  /* Aide régie : la ligne du lieu de stockage clignote après le délai */
+  dd.hint-blink { color: var(--alarm) !important; text-shadow: 0 0 14px rgba(227,164,85,.7); animation: hintBlink 1s steps(2, start) infinite; cursor: pointer; }
+  dt.hint-blink { color: var(--alarm); animation: hintBlink 1s steps(2, start) infinite; }
+  @keyframes hintBlink { to { opacity: .15; } }
   .para { margin: 18px 0 0; max-width: 62ch; color: var(--fg); }
   .para.muted { color: var(--fg-muted); font-size: 13px; }
   .record-actions { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px; }
@@ -418,7 +422,7 @@
       <div><dt>Nature</dt><dd data-text="Dernier souvenir extrait"></dd></div>
       <div><dt>État</dt><dd data-text="Disponible pour restitution"></dd></div>
       <div><dt>Mode de conservation</dt><dd class="hl" data-text="Température négative constante"></dd></div>
-      <div><dt>Lieu de stockage</dt><dd data-text="Réserve froide de l’annexe médicale"></dd></div>
+      <div><dt id="hint-dt">Lieu de stockage</dt><dd id="hint-dd" data-text="Réserve froide de l’annexe médicale"></dd></div>
       <div><dt>Emplacement</dt><dd class="hl" data-text="Bac M-04"></dd></div>
       <div><dt>Identification du support</dt><dd class="hl" data-text="G. MOREL / 314"></dd></div>
     </dl>
@@ -789,8 +793,54 @@
       void views[name].offsetWidth;
       views[name].classList.add("reveal");
     }
-    if (name === "record") revealRecord();
+    if (name === "record") { revealRecord(); hintSchedule(); }
   }
+
+  /* =============== Aide régie : après 7 min sur la fiche, le lieu de stockage clignote et bipe =============== */
+  var HINT_DELAY = 7 * 60 * 1000;
+  var qsHint = /[?&]hint=(\d+)/.exec(location.search);
+  if (qsHint) HINT_DELAY = parseInt(qsHint[1], 10) * 1000;   // ?hint=20 pour tester en 20 secondes
+  var hintTimer = null, hintBeepTimer = null, hintLevel = 0, hintActive = false;
+  var hintDt = document.getElementById("hint-dt"), hintDd = document.getElementById("hint-dd");
+  function hintBeep() {
+    audioInit();
+    if (!audio.ctx) return;
+    if (audio.ctx.state === "suspended") audio.ctx.resume();
+    var c = audio.ctx, t0 = c.currentTime;
+    var vol = Math.min(0.9, 0.04 + hintLevel * 0.045);   // monte à chaque bip, plafonne après ~20 bips
+    [0, 0.2].forEach(function (off) {
+      var o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+      o.type = "square"; o.frequency.value = 1760; f.type = "lowpass"; f.frequency.value = 5200;
+      g.gain.setValueAtTime(0.0001, t0 + off);
+      g.gain.exponentialRampToValueAtTime(vol, t0 + off + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + 0.13);
+      o.connect(f); f.connect(g); g.connect(c.destination);   // direct : ignore le bouton « Son coupé »
+      o.start(t0 + off); o.stop(t0 + off + 0.16);
+    });
+    hintLevel++;
+  }
+  function hintStart() {
+    if (hintActive) return;
+    hintActive = true; hintLevel = 0;
+    hintDt.classList.add("hint-blink"); hintDd.classList.add("hint-blink");
+    hintBeep();
+    hintBeepTimer = setInterval(hintBeep, 2400);
+  }
+  function hintStop(full) {
+    if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+    if (hintBeepTimer) { clearInterval(hintBeepTimer); hintBeepTimer = null; }
+    if (full) { hintActive = false; hintDt.classList.remove("hint-blink"); hintDd.classList.remove("hint-blink"); }
+  }
+  function hintSchedule() {
+    hintStop(true);
+    var at = parseInt(store("varenne-at") || "0", 10);
+    if (!at) { at = Date.now(); store("varenne-at", String(at)); }
+    var remaining = at + HINT_DELAY - Date.now();
+    if (remaining <= 0) hintStart(); else hintTimer = setTimeout(hintStart, remaining);
+  }
+  // un clic sur la ligne coupe le bip (le clignotement reste jusqu'à la fermeture de session)
+  hintDd.addEventListener("click", function () { if (hintActive) hintStop(false); });
+  hintDt.addEventListener("click", function () { if (hintActive) hintStop(false); });
 
   var SCRAMBLE = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%&/·";
   function scramble(el, text, delay) {
@@ -884,6 +934,7 @@
             setTimeout(function () {
               btnLogin.disabled = false;
               store("varenne", "1");
+              store("varenne-at", String(Date.now()));   // départ du délai d'aide
               identEl.value = ""; codeEl.value = ""; stepsEl.innerHTML = "";
               show("record");
             }, reduced ? 0 : 500);
@@ -1315,6 +1366,8 @@
 
   document.getElementById("btn-logout").addEventListener("click", function () {
     closeDoc();
+    hintStop(true);
+    store("varenne-at", null);
     store("varenne", null);
     if (audio.ctx && !audio.muted) sfx.blip();
     show("login");
