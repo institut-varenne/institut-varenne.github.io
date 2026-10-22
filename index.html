@@ -852,7 +852,8 @@
     audioInit();
     if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
     if (audio.ctx && !audio.muted) droneStart();
-    var okIdent = loose(identEl.value) === loose(IDENT);
+    // Identifiant accepté dès que "VARENNE" apparaît (V.VARENNE, VARENNE, V VARENNE, DR V VARENNE…), accents ignorés
+    var okIdent = norm(identEl.value).normalize("NFD").replace(/[̀-ͯ]/g, "").indexOf("VARENNE") !== -1;
     var okCode = loose(codeEl.value) === loose(CODE);
     var empty = !identEl.value.trim() || !codeEl.value.trim();
     statusEl.textContent = "";
