@@ -503,6 +503,7 @@
       var comp = audio.ctx.createDynamicsCompressor();
       audio.master.connect(comp); comp.connect(audio.ctx.destination);
     } catch (e) { audio.ctx = null; }
+    decodeScream();
   }
   function now() { return audio.ctx.currentTime; }
   function tone(opts) {
@@ -947,6 +948,16 @@
   /* =============== Documents numériques =============== */
   var mediaOK = {};   // src -> true/false once probed
   var mediaImg = {};  // src -> loaded Image
+  // Cri réel (media/cri.mp3) : téléchargé dès le chargement, décodé quand le contexte audio existe
+  var screamData = null, screamBuf = null;
+  try {
+    fetch("media/cri.mp3").then(function (r) { return r.ok ? r.arrayBuffer() : null; }).then(function (b) { screamData = b; }).catch(function () {});
+  } catch (e) {}
+  function decodeScream() {
+    if (screamBuf || !screamData || !audio.ctx) return;
+    var data = screamData.slice(0);
+    try { audio.ctx.decodeAudioData(data, function (buf) { screamBuf = buf; }, function () {}); } catch (e) {}
+  }
   var noiseCanvas = null;
   function noisePattern(g) {
     if (!noiseCanvas) {
@@ -1134,7 +1145,23 @@
     for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     var hiss = c.createBufferSource(); hiss.buffer = nb; hiss.loop = true;
     var hissF = c.createBiquadFilter(); hissF.type = "highpass"; hissF.frequency.value = 5000;
-    var hissG = c.createGain(); hissG.gain.value = 0.012; hiss.connect(hissF); hissF.connect(hissG); hissG.connect(bus); hiss.start();
+    var hissG = c.createGain(); hissG.gain.value = 0.02; hiss.connect(hissF); hissF.connect(hissG); hissG.connect(bus); hiss.start();
+    // grésillement : clics épars de bande magnétique + crépitement électrique, intensité pilotée par la timeline
+    var cb = c.createBuffer(1, c.sampleRate * 3, c.sampleRate), cd = cb.getChannelData(0);
+    for (var ci = 0; ci < cd.length; ci++) { var r = Math.random(); cd[ci] = r < 0.0012 ? (Math.random() * 2 - 1) : (r < 0.03 ? (Math.random() * 2 - 1) * 0.08 : 0); }
+    var crack = c.createBufferSource(); crack.buffer = cb; crack.loop = true;
+    var crackF = c.createBiquadFilter(); crackF.type = "bandpass"; crackF.frequency.value = 2800; crackF.Q.value = 0.6;
+    var crackG = c.createGain(); crackG.gain.value = 0.05; crack.connect(crackF); crackF.connect(crackG); crackG.connect(bus); crack.start();
+    var buzz = c.createOscillator(); buzz.type = "sawtooth"; buzz.frequency.value = 100;
+    var buzzF = c.createBiquadFilter(); buzzF.type = "bandpass"; buzzF.frequency.value = 2400; buzzF.Q.value = 3;
+    var buzzG = c.createGain(); buzzG.gain.value = 0.0001; buzz.connect(buzzF); buzzF.connect(buzzG); buzzG.connect(bus); buzz.start();
+    // chaîne « vieil enregistrement » pour le cri réel : passe-bande, légère saturation, réverbération
+    decodeScream();
+    var tapeHP = c.createBiquadFilter(); tapeHP.type = "highpass"; tapeHP.frequency.value = 260;
+    var tapeLP = c.createBiquadFilter(); tapeLP.type = "lowpass"; tapeLP.frequency.value = 3600; tapeLP.Q.value = 1.2;
+    var tapeWS = c.createWaveShaper(); var tc = new Float32Array(256); for (var ti = 0; ti < 256; ti++) { var tx = ti / 128 - 1; tc[ti] = Math.tanh(tx * 2.2); } tapeWS.curve = tc;
+    var tapeG = c.createGain(); tapeG.gain.value = 1.1;
+    tapeHP.connect(tapeLP); tapeLP.connect(tapeWS); tapeWS.connect(tapeG);
     // --- saw motor ---
     var m1 = c.createOscillator(), m2 = c.createOscillator(), m3 = c.createOscillator();
     m1.type = "sawtooth"; m2.type = "sawtooth"; m3.type = "square";
@@ -1175,8 +1202,39 @@
     var bf = c.createBiquadFilter(); bf.type = "bandpass"; bf.frequency.value = 2200; bf.Q.value = 1.2;
     var bg = c.createGain(); bg.gain.value = 0.0001; breath.connect(bf); bf.connect(bg); bg.connect(sg); breath.start();
     var sComp = c.createDynamicsCompressor(); sComp.threshold.value = -18; sComp.ratio.value = 6;
-    sg.connect(sComp); out(sComp, 0.9, 0.8);
+    sg.connect(sComp); tapeG.connect(sComp); out(sComp, 0.9, 0.8);
     v1.start(); v2.start();
+    function synthScream(len, kind) {
+      var t = now();
+      var base = 480 + Math.random() * 160, peak = base * (1.5 + Math.random() * .4);
+      [v1, v2].forEach(function (o, i) {
+        o.frequency.cancelScheduledValues(t);
+        o.frequency.setValueAtTime(base * .8 + i * 3, t);
+        o.frequency.exponentialRampToValueAtTime(peak + i * 4, t + 0.18);
+        o.frequency.setValueAtTime(peak + i * 4, t + len * .55);
+        o.frequency.exponentialRampToValueAtTime(kind === "break" ? base * .45 : base * .9, t + len);
+      });
+      vibG.gain.cancelScheduledValues(t); vibG.gain.setValueAtTime(8, t); vibG.gain.linearRampToValueAtTime(60, t + len * .7); vibG.gain.linearRampToValueAtTime(10, t + len);
+      F1.frequency.cancelScheduledValues(t); F1.frequency.setValueAtTime(650, t); F1.frequency.exponentialRampToValueAtTime(950, t + 0.3); F1.frequency.exponentialRampToValueAtTime(700, t + len);
+      F2.frequency.cancelScheduledValues(t); F2.frequency.setValueAtTime(1600, t); F2.frequency.exponentialRampToValueAtTime(2300, t + 0.3); F2.frequency.exponentialRampToValueAtTime(1700, t + len);
+      sg.gain.cancelScheduledValues(t); sg.gain.setValueAtTime(0.0001, t); sg.gain.exponentialRampToValueAtTime(0.9, t + 0.07); sg.gain.setValueAtTime(0.9, t + len * .75); sg.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      tremG.gain.cancelScheduledValues(t); tremG.gain.setValueAtTime(0, t); tremG.gain.linearRampToValueAtTime(0.35, t + len * .6); tremG.gain.linearRampToValueAtTime(0, t + len);
+      bg.gain.cancelScheduledValues(t); bg.gain.setValueAtTime(0.0001, t); bg.gain.exponentialRampToValueAtTime(0.25, t + 0.05); bg.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.3);
+    }
+    function fileScream(len, kind) {
+      var t = now();
+      var s = c.createBufferSource(); s.buffer = screamBuf;
+      s.playbackRate.value = 0.9 + Math.random() * 0.2;
+      if (kind === "break") { s.playbackRate.setValueAtTime(1.05, t); s.playbackRate.exponentialRampToValueAtTime(0.55, t + Math.min(len, screamBuf.duration)); }
+      var env = c.createGain();
+      var dur = Math.min(screamBuf.duration / s.playbackRate.value, len + 0.6);
+      env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(1, t + 0.03);
+      env.gain.setValueAtTime(1, t + Math.max(0.05, dur - 0.25)); env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s.connect(env); env.connect(tapeHP);
+      s.start(t); s.stop(t + dur + 0.05);
+      // une pointe de grésillement à chaque cri
+      crackG.gain.setValueAtTime(0.3, t); crackG.gain.exponentialRampToValueAtTime(0.08, t + 0.6);
+    }
     bus.gain.exponentialRampToValueAtTime(0.6, t0 + 0.6);
 
     return {
@@ -1209,21 +1267,14 @@
         whine.frequency.setTargetAtTime(400, t, 0.8);
       },
       scream: function (len, kind) {
-        var t = now(); len = len || 1.4;
-        var base = 480 + Math.random() * 160, peak = base * (1.5 + Math.random() * .4);
-        [v1, v2].forEach(function (o, i) {
-          o.frequency.cancelScheduledValues(t);
-          o.frequency.setValueAtTime(base * .8 + i * 3, t);
-          o.frequency.exponentialRampToValueAtTime(peak + i * 4, t + 0.18);
-          o.frequency.setValueAtTime(peak + i * 4, t + len * .55);
-          o.frequency.exponentialRampToValueAtTime(kind === "break" ? base * .45 : base * .9, t + len);
-        });
-        vibG.gain.cancelScheduledValues(t); vibG.gain.setValueAtTime(8, t); vibG.gain.linearRampToValueAtTime(60, t + len * .7); vibG.gain.linearRampToValueAtTime(10, t + len);
-        F1.frequency.cancelScheduledValues(t); F1.frequency.setValueAtTime(650, t); F1.frequency.exponentialRampToValueAtTime(950, t + 0.3); F1.frequency.exponentialRampToValueAtTime(700, t + len);
-        F2.frequency.cancelScheduledValues(t); F2.frequency.setValueAtTime(1600, t); F2.frequency.exponentialRampToValueAtTime(2300, t + 0.3); F2.frequency.exponentialRampToValueAtTime(1700, t + len);
-        sg.gain.cancelScheduledValues(t); sg.gain.setValueAtTime(0.0001, t); sg.gain.exponentialRampToValueAtTime(0.9, t + 0.07); sg.gain.setValueAtTime(0.9, t + len * .75); sg.gain.exponentialRampToValueAtTime(0.0001, t + len);
-        tremG.gain.cancelScheduledValues(t); tremG.gain.setValueAtTime(0, t); tremG.gain.linearRampToValueAtTime(0.35, t + len * .6); tremG.gain.linearRampToValueAtTime(0, t + len);
-        bg.gain.cancelScheduledValues(t); bg.gain.setValueAtTime(0.0001, t); bg.gain.exponentialRampToValueAtTime(0.25, t + 0.05); bg.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.3);
+        len = len || 1.4;
+        if (screamBuf) fileScream(len, kind); else synthScream(len, kind);
+      },
+      crackle: function (level) {   // 0 calme, 1 coupe, 2 statique
+        var t = now();
+        crackG.gain.setTargetAtTime(level === 0 ? 0.05 : (level === 1 ? 0.12 : 0.6), t, 0.2);
+        buzzG.gain.setTargetAtTime(level === 1 ? 0.03 : (level === 2 ? 0.08 : 0.0001), t, 0.2);
+        hissG.gain.setTargetAtTime(level === 2 ? 0.12 : 0.02, t, 0.2);
       },
       powerDown: function () {
         var t = now();
@@ -1242,7 +1293,7 @@
         var t = now();
         bus.gain.cancelScheduledValues(t); bus.gain.setTargetAtTime(0.0001, t, 0.25);
         setTimeout(function () {
-          try { [hum, hiss, m1, m2, m3, whine, wv, load, grind, glfo, v1, v2, vib, trem, breath].forEach(function (n) { n.stop(); }); } catch (e) {}
+          try { [hum, hiss, crack, buzz, m1, m2, m3, whine, wv, load, grind, glfo, v1, v2, vib, trem, breath].forEach(function (n) { n.stop(); }); } catch (e) {}
           try { bus.disconnect(); } catch (e) {}
         }, 1000);
       }
@@ -1313,7 +1364,7 @@
       var lampFlicker = 0.92 + Math.sin(t * 7.3) * 0.03 + Math.sin(t * 23) * 0.02;
       if (t < 3) { o.caption = "SUJET 314 — IMMOBILISÉ"; o.brightness = lampFlicker; }
       else if (t < 6) {
-        if (!flags.spun) { flags.spun = true; if (clipAudio) clipAudio.sawSpinUp(); }
+        if (!flags.spun) { flags.spun = true; if (clipAudio) { clipAudio.sawSpinUp(); clipAudio.crackle(1); } }
         o.caption = "SCIE EN ROTATION"; o.sawOn = true;
         o.brightness = lampFlicker - (t > 4.5 && Math.random() < .08 ? .45 : 0);
       }
@@ -1336,7 +1387,8 @@
           if (t < blackUntil) { o.brightness = 0; o.noHud = Math.random() < .7; }
           else { blackUntil = -1; if (clipAudio) clipAudio.powerUp(); }
         }
-        if (clipAudio && t - lastScream > 1.5 + Math.random() * 0.8) { clipAudio.scream(1.1 + Math.random() * .6, Math.random() < .3 ? "break" : "hold"); lastScream = t; }
+        var gap = Math.max(1.5, screamBuf ? screamBuf.duration * 0.85 : 0) + Math.random() * 0.8;
+        if (clipAudio && t - lastScream > gap) { clipAudio.scream(1.1 + Math.random() * .6, Math.random() < .3 ? "break" : "hold"); lastScream = t; }
         if (clipAudio && t >= nextBite) { clipAudio.bite(); nextBite = t + 0.7 + Math.random() * 1.1; }
       }
       else if (t < 17) {
@@ -1348,11 +1400,11 @@
       }
       else if (t < 19) {
         // picture returns to normal, lamp steady, chair now empty of movement
-        if (!flags.longUp) { flags.longUp = true; if (clipAudio) clipAudio.powerUp(); }
+        if (!flags.longUp) { flags.longUp = true; if (clipAudio) { clipAudio.powerUp(); clipAudio.crackle(0); } }
         o.brightness = Math.min(1, 0.6 + (t - 17) * .4); o.caption = ""; o.gray = 0.95; o.grain = 0.14;
       }
       else {
-        if (!flags.burst) { flags.burst = true; if (clipAudio) clipAudio.staticBurst(); }
+        if (!flags.burst) { flags.burst = true; if (clipAudio) { clipAudio.staticBurst(); clipAudio.crackle(2); } }
         o.lost = true; o.grain = 0.6; o.brightness = 0.35; o.noHud = true;
       }
       if (img) drawPhoto(g, cv.width, cv.height, t, img, o);

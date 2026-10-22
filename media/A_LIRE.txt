@@ -2,6 +2,7 @@ DOSSIER MEDIA — DOCUMENTS NUMERIQUES (fiche M-04 / 314)
 =======================================================
   cliche-1.png   Cliche 1/2 — Preparation du sujet (= horror_1.png)
   cliche-2.png   Cliche 2/2 — Trepanation (= horror_2 (1).png), sert aussi de base a la "video camera 02"
+  cri.mp3        Cri reel joue pendant la "video" (= Male Scream [Sound Effect].mp3), passe dans une chaine "vieil enregistrement"
 
 La video n'est pas un fichier : le site anime cliche-2.png (scintillements, extinctions d'ecran,
 secousses, dechirures) avec une bande-son scie + cris synthetisee par le navigateur.
