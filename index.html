@@ -394,8 +394,8 @@
         <div class="inwrap"><input type="text" id="ident" name="ident" placeholder="Titulaire" autocapitalize="characters" spellcheck="false" required></div>
       </div>
       <div class="field">
-        <label for="code">Code de consultation</label>
-        <div class="inwrap"><input type="text" id="code" name="code" placeholder="Référence de la carte" autocapitalize="characters" spellcheck="false" required></div>
+        <label for="code">Matricule</label>
+        <div class="inwrap"><input type="text" id="code" name="code" placeholder="Matricule du badge" autocapitalize="characters" spellcheck="false" required></div>
       </div>
       <div class="actions">
         <button type="submit" id="btn-login">Consulter</button>
@@ -403,7 +403,7 @@
       <div class="steps" id="steps" aria-live="polite"></div>
       <div class="status" id="login-status" aria-live="polite"></div>
     </form>
-    <p class="notice">Titulaire enregistré : Dr V. Varenne. Toute consultation est inscrite au registre du service. Les archives antérieures à la mise en service du terminal sont présentées sous forme de copies numériques.</p>
+    <p class="notice">Toute consultation est inscrite au registre du service. Les archives antérieures à la mise en service du terminal sont présentées sous forme de copies numériques.</p>
   </section>
 
   <!-- Fiche de conservation -->
@@ -862,17 +862,17 @@
 
     function fail(msg) { statusEl.textContent = msg; btnLogin.disabled = false; }
 
-    var s1 = addStep("Lecture des références de la carte");
+    var s1 = addStep("Lecture du badge professionnel");
     setTimeout(function () {
-      if (empty) { settle(s1, false, "INCOMPLET"); fail("Références incomplètes. Renseignez l’identifiant et le code de consultation."); return; }
+      if (empty) { settle(s1, false, "INCOMPLET"); fail("Références incomplètes. Renseignez l’identifiant et le matricule."); return; }
       settle(s1, true, "OK");
       var s2 = addStep("Contrôle du titulaire");
       setTimeout(function () {
         if (!okIdent) { settle(s2, false, "REFUSÉ"); fail("Accès refusé. Identifiant non reconnu : la consultation est nominative."); return; }
         settle(s2, true, "DR V. VARENNE");
-        var s3 = addStep("Vérification du code de consultation");
+        var s3 = addStep("Vérification du matricule");
         setTimeout(function () {
-          if (!okCode) { settle(s3, false, "REFUSÉ"); fail("Accès refusé. Le code de consultation ne correspond pas à la carte du titulaire."); return; }
+          if (!okCode) { settle(s3, false, "REFUSÉ"); fail("Accès refusé. Le matricule ne correspond pas au badge du titulaire."); return; }
           settle(s3, true, "OK");
           var s4 = addStep("Ouverture des archives froides");
           setTimeout(function () {
